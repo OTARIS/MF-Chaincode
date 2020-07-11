@@ -1,5 +1,8 @@
 package org.example;
 
+import java.util.HashMap;
+
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 
 import org.hyperledger.fabric.contract.annotation.DataType;
@@ -10,23 +13,27 @@ import org.json.JSONObject;
 public class PrivateMetaObject {
 
     @Property()
-    String test = "";
+    HashMap<String, String> attributes = new HashMap<>();
+    
 
     public PrivateMetaObject(){
 
     }
 
-    public void setTest(String value){
-        test = value;
+    public HashMap<String, String> getAttributes() {
+        return attributes;
     }
 
-    public String getTest(){
-        return test;
+    public void setAttributes(HashMap<String, String> attr) {
+        attributes = attr;
     }
 
-    @Override
-    public String toString(){
-        return "The value is: " +test;
+    public void addAttribute(String attrName, String attrValue) {
+        attributes.put(attrName, attrValue);
+    }
+
+    public void deleteAttribute(String attrName) {
+        attributes.remove(attrName);
     }
     
     public String toJSONString() {      
@@ -37,8 +44,13 @@ public class PrivateMetaObject {
 
     public static PrivateMetaObject fromJSONString(String json) {
         PrivateMetaObject pmo = new PrivateMetaObject();
-        String name = new JSONObject(json).getString("test");
-        pmo.setTest(name);
+
+        String attributesString = new JSONObject(json).get("attributes").toString();
+        HashMap<String, String> attributesMap = new Gson().fromJson(
+            attributesString, new TypeToken<HashMap<String, String>>() {}.getType()
+        );
+        
+        pmo.setAttributes(attributesMap);
         return pmo;
     
     }

@@ -34,6 +34,7 @@ import java.util.Map;
 public class MyAssetContract implements ContractInterface {
 
     private String META_DEF_ID = "METADEF";
+    private String PDC_STRING = "_P";
 
     public  MyAssetContract() {
 
@@ -106,11 +107,10 @@ public class MyAssetContract implements ContractInterface {
     //########################################################################################
 
     @Transaction()
-    public void createObject(Context ctx, String id, String dataName, String[] attrNames, String[] attrValues, String timeStamp){
+    public void createObject(Context ctx, String id, String pdcName, String dataName, String[] attrNames, String[] attrValues, String timeStamp)throws UnsupportedEncodingException{
         //TODO Prüfung auf richtigen Datentyp
         if (!ObjectExists(ctx, id)){
-            MetaDef metaDef = META_readMetaDef(ctx);
-            
+            MetaDef metaDef = META_readMetaDef(ctx);           
             if (metaDef.dataNameExists(dataName)){
                 List<String> allowedAttr = metaDef.getFieldsByDataName(dataName);
 
@@ -118,10 +118,22 @@ public class MyAssetContract implements ContractInterface {
                 for(String attr : attrNames){
                     if (!allowedAttr.contains(attr)) allAttrAllowed = false;
                 }
+
+                Map<String, byte[]> transientData = ctx.getStub().getTransient();
+                if (transientData.size() != 0) {
+                    for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
+                        if (!allowedAttr.contains(entry.getKey())) allAttrAllowed = false;
+                    }
+                }
+            
                 if (allAttrAllowed){
                     MetaObject metaObject = new MetaObject(dataName, attrNames, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
                     ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
-
+                    PrivateMetaObject privateMetaObject = new PrivateMetaObject();
+                    for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
+                        privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
+                    }
+                    ctx.getStub().putPrivateData(pdcName, id + PDC_STRING, privateMetaObject.toJSONString().getBytes(UTF_8));
                 }
                 else {
                     throw new RuntimeException("At least one illegal attribute name recognized");
@@ -137,12 +149,21 @@ public class MyAssetContract implements ContractInterface {
         
     }
 
+
     @Transaction()
     public String readObject(Context ctx, String id){
         if (ObjectExists(ctx, id)){
+            String pmoString = "";
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
-            return metaObject.toString();
+            try {
+                byte[] privateMetaObject = ctx.getStub().getPrivateData("CollectionOne", id + PDC_STRING);
+                pmoString = new String(privateMetaObject, "UTF-8");
+            }
+            catch (Exception e){}
+            String result = metaObject.toString() + "\n Private Data: " + pmoString;
+            return result;
         }
+        
         else {
             throw new RuntimeException("The ID "+id+" does not exist");
         }
@@ -220,16 +241,9 @@ public class MyAssetContract implements ContractInterface {
         }
     }
 
-    //Private Data Collection###############################################//#endregion
+    //Private Data Collection###############################################
 
-    @Transaction()
-    public void createPrivateData(Context ctx,String id) throws UnsupportedEncodingException{
-        PrivateMetaObject pmo = new PrivateMetaObject();
-        Map<String, byte[]> transientData = ctx.getStub().getTransient();
-        
-        pmo.setTest(new String(transientData.get("value"), "UTF-8"));
-        ctx.getStub().putPrivateData("CollectionOne", id, pmo.toJSONString().getBytes(UTF_8));
-    }
+
 
     @Transaction()
     public String readPrivateData(Context ctx, String id) throws UnsupportedEncodingException{
@@ -238,4 +252,5 @@ public class MyAssetContract implements ContractInterface {
         return pmoString;
 
     }
+    
 }
