@@ -15,6 +15,7 @@ import org.hyperledger.fabric.contract.annotation.License;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @Contract(name = "MyAssetContract",
@@ -66,18 +67,22 @@ public class MyAssetContract implements ContractInterface {
     @Transaction()
     public void META_addDataName(Context ctx, String dataName, String[] fieldNames){
         MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
-        if (metaDef.dataNameExists(dataName)){
-            throw new RuntimeException("The dataName "+dataName+" already exists");
-        }
-        else {
-            ArrayList<String> test = new ArrayList<>();
-            for (int i = 0; i < fieldNames.length; i++){
-                test.add(fieldNames[i]);
+            
+        ArrayList<String> fieldNameArray = new ArrayList<>();
+        HashMap<String, String> allowedFields = metaDef.getFieldToTypeMap();
+        for (int i = 0; i < fieldNames.length; i++){
+            if (allowedFields.containsKey(fieldNames[i])){
+                fieldNameArray.add(fieldNames[i]);
             }
-
-            metaDef.addDataName(dataName, test);
-            ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));
+            else {
+                throw new RuntimeException("The field " +fieldNames[i] + " is not defined");
+            }
         }
+       
+
+        metaDef.addDataName(dataName, fieldNameArray);
+        ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));
+        
     }
 
     @Transaction()
@@ -191,6 +196,24 @@ public class MyAssetContract implements ContractInterface {
         else {
             throw new RuntimeException("The ID "+id+" or "+predecessorId+  " does not exist");
         }
+    }
 
+    @Transaction()
+    public void updateAttribute(Context ctx, String id, String attrName, String attrValue){
+        if (ObjectExists(ctx, id)){
+            MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
+            MetaDef metaDef = META_readMetaDef(ctx);
+            List<String> allowedAttr = metaDef.getFieldsByDataName(metaObject.getDataName());
+            if (allowedAttr.contains(attrName)){
+                metaObject.addAttribute(attrName, attrValue);
+                ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
+            }
+            else {
+                throw new RuntimeException("The attrName "+attrName+  " is not defined");
+            }  
+        }
+        else {
+            throw new RuntimeException("The ID "+id+" does not exist");
+        }
     }
 }

@@ -2,7 +2,6 @@ package org.example;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import org.hyperledger.fabric.contract.annotation.DataType;
@@ -13,7 +12,7 @@ import org.json.JSONObject;
 public class MetaObject {
 
     @Property()
-    boolean alarmFlag = false;
+    boolean alarmFlag = false; //TODO Implementierung
 
     @Property()
     String dataName = "";
