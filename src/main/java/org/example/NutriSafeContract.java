@@ -13,30 +13,27 @@ import org.hyperledger.fabric.contract.annotation.Contact;
 import org.hyperledger.fabric.contract.annotation.Info;
 import org.hyperledger.fabric.contract.annotation.License;
 import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Contract(name = "MyAssetContract",
-    info = @Info(title = "MyAsset contract",
-                description = "My Smart Contract",
-                version = "0.0.1",
+@Contract(name = "NutriSafeContract",
+    info = @Info(title = "NutriSafe contract",
+                description = "Chaincode for the research project NutriSafe",
+                version = "1",
                 license =
                         @License(name = "Apache-2.0",
-                                url = ""),
-                                contact =  @Contact(email = "ChaincodeMeta@example.com",
-                                                name = "ChaincodeMeta",
-                                                url = "http://ChaincodeMeta.me")))
+                                url = "https://www.nutrisafe.de"),
+                                contact =  @Contact(name = "Tobias Wagner")))
 @Default
-public class MyAssetContract implements ContractInterface {
+public class NutriSafeContract implements ContractInterface {
 
     private String META_DEF_ID = "METADEF";
     private String PDC_STRING = "_P";
 
-    public  MyAssetContract() {
+    public  NutriSafeContract() {
 
     }
 
@@ -90,14 +87,14 @@ public class MyAssetContract implements ContractInterface {
     }
 
     @Transaction()
-    public boolean ObjectExists(Context ctx, String id){
+    public boolean objectExists(Context ctx, String id){
         byte[] buffer = ctx.getStub().getState(id);
         return (buffer != null && buffer.length > 0);
     }
 
     @Transaction()
     public void META_delete(Context ctx){
-        boolean exists = ObjectExists(ctx, META_DEF_ID);
+        boolean exists = objectExists(ctx, META_DEF_ID);
         if (!exists) {
             throw new RuntimeException("The metaDef does not exist");
         }
@@ -109,7 +106,7 @@ public class MyAssetContract implements ContractInterface {
     @Transaction()
     public void createObject(Context ctx, String id, String pdcName, String dataName, String[] attrNames, String[] attrValues, String timeStamp)throws UnsupportedEncodingException{
         //TODO Prüfung auf richtigen Datentyp
-        if (!ObjectExists(ctx, id)){
+        if (!objectExists(ctx, id)){
             MetaDef metaDef = META_readMetaDef(ctx);           
             if (metaDef.dataNameExists(dataName)){
                 List<String> allowedAttr = metaDef.getFieldsByDataName(dataName);
@@ -152,7 +149,7 @@ public class MyAssetContract implements ContractInterface {
 
     @Transaction()
     public String readObject(Context ctx, String id){
-        if (ObjectExists(ctx, id)){
+        if (objectExists(ctx, id)){
             String pmoString = "";
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             try {
@@ -160,7 +157,7 @@ public class MyAssetContract implements ContractInterface {
                 pmoString = new String(privateMetaObject, "UTF-8");
             }
             catch (Exception e){}
-            String result = metaObject.toString() + "\n Private Data: " + pmoString;
+            String result = metaObject.toString() + "Private Data: \n" + pmoString;
             return result;
         }
         
@@ -172,7 +169,7 @@ public class MyAssetContract implements ContractInterface {
 
     @Transaction()
     public void setReceiver(Context ctx, String id, String receiver){
-        if (ObjectExists(ctx, id)){
+        if (objectExists(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             if (metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())){
                 metaObject.setReceiver(receiver);
@@ -189,7 +186,7 @@ public class MyAssetContract implements ContractInterface {
 
     @Transaction()
     public void changeOwner(Context ctx, String id, String timeStamp){
-        if (ObjectExists(ctx, id)){
+        if (objectExists(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             if (metaObject.getReceiver().equals(ctx.getClientIdentity().getMSPID())){
                 metaObject.setReceiver("");
@@ -208,7 +205,7 @@ public class MyAssetContract implements ContractInterface {
     @Transaction()
     public void addPredecessor(Context ctx, String predecessorId, String id){
         //TODO Übergabe von Liste an Predecessor
-        if (ObjectExists(ctx, id) && ObjectExists(ctx, predecessorId)){
+        if (objectExists(ctx, id) && objectExists(ctx, predecessorId)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             metaObject.addPredecessor(predecessorId);
             ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
@@ -224,7 +221,7 @@ public class MyAssetContract implements ContractInterface {
 
     @Transaction()
     public void updateAttribute(Context ctx, String id, String attrName, String attrValue){
-        if (ObjectExists(ctx, id)){
+        if (objectExists(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             MetaDef metaDef = META_readMetaDef(ctx);
             List<String> allowedAttr = metaDef.getFieldsByDataName(metaObject.getDataName());
@@ -239,18 +236,5 @@ public class MyAssetContract implements ContractInterface {
         else {
             throw new RuntimeException("The ID "+id+" does not exist");
         }
-    }
-
-    //Private Data Collection###############################################
-
-
-
-    @Transaction()
-    public String readPrivateData(Context ctx, String id) throws UnsupportedEncodingException{
-        byte[] pmo = ctx.getStub().getPrivateData("CollectionOne", id);
-        String pmoString = new String(pmo, "UTF-8");
-        return pmoString;
-
-    }
-    
+    }    
 }
