@@ -14,9 +14,11 @@ import org.hyperledger.fabric.contract.annotation.Info;
 import org.hyperledger.fabric.contract.annotation.License;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Contract(name = "MyAssetContract",
     info = @Info(title = "MyAsset contract",
@@ -76,6 +78,7 @@ public class MyAssetContract implements ContractInterface {
             }
             else {
                 throw new RuntimeException("The field " +fieldNames[i] + " is not defined");
+                
             }
         }
        
@@ -215,5 +218,24 @@ public class MyAssetContract implements ContractInterface {
         else {
             throw new RuntimeException("The ID "+id+" does not exist");
         }
+    }
+
+    //Private Data Collection###############################################//#endregion
+
+    @Transaction()
+    public void createPrivateData(Context ctx,String id) throws UnsupportedEncodingException{
+        PrivateMetaObject pmo = new PrivateMetaObject();
+        Map<String, byte[]> transientData = ctx.getStub().getTransient();
+        
+        pmo.setTest(new String(transientData.get("value"), "UTF-8"));
+        ctx.getStub().putPrivateData("CollectionOne", id, pmo.toJSONString().getBytes(UTF_8));
+    }
+
+    @Transaction()
+    public String readPrivateData(Context ctx, String id) throws UnsupportedEncodingException{
+        byte[] pmo = ctx.getStub().getPrivateData("CollectionOne", id);
+        String pmoString = new String(pmo, "UTF-8");
+        return pmoString;
+
     }
 }
