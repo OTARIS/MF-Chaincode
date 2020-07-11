@@ -3,7 +3,6 @@
  */
 package org.example;
 
-
 import org.hyperledger.fabric.contract.Context;
 import org.hyperledger.fabric.contract.ContractInterface;
 import org.hyperledger.fabric.contract.annotation.Contract;
@@ -27,6 +26,7 @@ import java.util.Map;
                         @License(name = "Apache-2.0",
                                 url = "https://www.nutrisafe.de"),
                                 contact =  @Contact(name = "Tobias Wagner")))
+
 @Default
 public class NutriSafeContract implements ContractInterface {
 
@@ -34,7 +34,6 @@ public class NutriSafeContract implements ContractInterface {
     private String PDC_STRING = "_P";
 
     public  NutriSafeContract() {
-
     }
 
     //## META ######################################################################################
@@ -42,8 +41,7 @@ public class NutriSafeContract implements ContractInterface {
     public void META_createSampleData(Context ctx){
         MetaDef metaDef = new MetaDef();
         metaDef.createSampleData();
-        ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));
-       
+        ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));     
     }
 
     @Transaction()
@@ -66,8 +64,7 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public void META_addDataName(Context ctx, String dataName, String[] fieldNames){
-        MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
-            
+        MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));           
         ArrayList<String> fieldNameArray = new ArrayList<>();
         HashMap<String, String> allowedFields = metaDef.getFieldToTypeMap();
         for (int i = 0; i < fieldNames.length; i++){
@@ -79,11 +76,8 @@ public class NutriSafeContract implements ContractInterface {
                 
             }
         }
-       
-
         metaDef.addDataName(dataName, fieldNameArray);
-        ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));
-        
+        ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));      
     }
 
     @Transaction()
@@ -110,19 +104,16 @@ public class NutriSafeContract implements ContractInterface {
             MetaDef metaDef = META_readMetaDef(ctx);           
             if (metaDef.dataNameExists(dataName)){
                 List<String> allowedAttr = metaDef.getFieldsByDataName(dataName);
-
                 boolean allAttrAllowed = true;
                 for(String attr : attrNames){
                     if (!allowedAttr.contains(attr)) allAttrAllowed = false;
                 }
-
                 Map<String, byte[]> transientData = ctx.getStub().getTransient();
                 if (transientData.size() != 0) {
                     for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
                         if (!allowedAttr.contains(entry.getKey())) allAttrAllowed = false;
                     }
-                }
-            
+                }        
                 if (allAttrAllowed){
                     MetaObject metaObject = new MetaObject(dataName, attrNames, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
                     ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
@@ -142,10 +133,8 @@ public class NutriSafeContract implements ContractInterface {
         }
         else {
             throw new RuntimeException("The ID "+id+" already exists");
-        }
-        
+        }       
     }
-
 
     @Transaction()
     public String readObject(Context ctx, String id){
@@ -159,12 +148,10 @@ public class NutriSafeContract implements ContractInterface {
             catch (Exception e){}
             String result = metaObject.toString() + "Private Data: \n" + pmoString;
             return result;
-        }
-        
+        }      
         else {
             throw new RuntimeException("The ID "+id+" does not exist");
         }
-
     }
 
     @Transaction()
@@ -209,7 +196,6 @@ public class NutriSafeContract implements ContractInterface {
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             metaObject.addPredecessor(predecessorId);
             ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
-
             metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(predecessorId)));
             metaObject.addSuccessor(id);
             ctx.getStub().putState(predecessorId, metaObject.toJSONString().getBytes(UTF_8));
@@ -221,6 +207,7 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public void updateAttribute(Context ctx, String id, String attrName, String attrValue){
+        //TODO update private data
         if (objectExists(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             MetaDef metaDef = META_readMetaDef(ctx);
