@@ -32,6 +32,7 @@ public class NutriSafeContract implements ContractInterface {
 
     private String META_DEF_ID = "METADEF";
     private String PDC_STRING = "_P";
+    private String ACR_STRING = "_ACR";
 
     public  NutriSafeContract() {
     }
@@ -138,12 +139,17 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public String readObject(Context ctx, String id){
+        //TODO Name der PDC in MetaObject speichern
         if (objectExists(ctx, id)){
             String pmoString = "";
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
+ 
             try {
                 byte[] privateMetaObject = ctx.getStub().getPrivateData("CollectionOne", id + PDC_STRING);
                 pmoString = new String(privateMetaObject, "UTF-8");
+                //PrivateMetaObject pmo = PrivateMetaObject.fromJSONString(pmoString);
+ 
+                
             }
             catch (Exception e){}
             String result = metaObject.toString() + "Private Data: \n" + pmoString;
@@ -178,6 +184,7 @@ public class NutriSafeContract implements ContractInterface {
             if (metaObject.getReceiver().equals(ctx.getClientIdentity().getMSPID())){
                 metaObject.setReceiver("");
                 metaObject.addTsAndOwner(timeStamp, ctx.getClientIdentity().getMSPID());
+                metaObject.setActualOwner(ctx.getClientIdentity().getMSPID());
                 ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
             }
             else {
@@ -192,6 +199,7 @@ public class NutriSafeContract implements ContractInterface {
     @Transaction()
     public void addPredecessor(Context ctx, String predecessorId, String id){
         //TODO Übergabe von Liste an Predecessor
+        //TODO Prüfen ob man Eigentümer ist
         if (objectExists(ctx, id) && objectExists(ctx, predecessorId)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             metaObject.addPredecessor(predecessorId);
@@ -212,16 +220,80 @@ public class NutriSafeContract implements ContractInterface {
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             MetaDef metaDef = META_readMetaDef(ctx);
             List<String> allowedAttr = metaDef.getFieldsByDataName(metaObject.getDataName());
-            if (allowedAttr.contains(attrName)){
-                metaObject.addAttribute(attrName, attrValue);
-                ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
+            if (attrName != ""){
+                if (allowedAttr.contains(attrName) && attrName != ""){
+                    metaObject.addAttribute(attrName, attrValue);
+                    ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
+                }
+                else {
+                    throw new RuntimeException("The attrName "+attrName+  " is not defined");
+                }  
+            }
+            //TODO Derzeit müssen alle privaten Attribute nochmal erneut mitgegeben werden. Sollte geändert werden
+            boolean allAttrAllowed = true;
+            Map<String, byte[]> transientData = ctx.getStub().getTransient();
+            if (transientData.size() != 0) {
+                for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
+                    if (!allowedAttr.contains(entry.getKey())) allAttrAllowed = false;
+                }
             }
             else {
-                throw new RuntimeException("The attrName "+attrName+  " is not defined");
-            }  
+                allAttrAllowed = false;
+            } 
+
+            if (allAttrAllowed){
+                try {
+                //byte[] privateMetaObject = ctx.getStub().getPrivateData("CollectionOne", id + PDC_STRING);
+                //String pmoString = new String(privateMetaObject, "UTF-8");
+                //PrivateMetaObject pmo = PrivateMetaObject.fromJSONString(pmoString);
+
+                PrivateMetaObject privateMetaObject = new PrivateMetaObject();
+                for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
+                    privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
+                }
+                ctx.getStub().putPrivateData("CollectionOne", id + PDC_STRING, privateMetaObject.toJSONString().getBytes(UTF_8));
+            }   
+                
+                
+                catch (Exception e){
+                    throw new RuntimeException("You are not allowed to change de PDC");
+                }
+            }
+
+
+            
         }
         else {
             throw new RuntimeException("The ID "+id+" does not exist");
         }
     }    
+
+
+// AcceptRule###################################################################
+
+    @Transaction()
+    public void addRuleNameAndCondition(Context ctx, String ruleName, String[] attributes, String[] rules){
+        //if (!objectExists(ctx, ctx.getClientIdentity().getMSPID() + ACR_STRING)){
+        //  AcceptRule acceptRule = new AcceptRule();
+
+        //}
+    }
+
+    @Transaction()
+    public void addNewAccept(Context ctx,String id, String test){
+        AcceptRule acceptRule = new AcceptRule();
+        acceptRule.setTest(test);
+        ctx.getStub().putPrivateData("CollectionOne", id, acceptRule.toJSONString().getBytes(UTF_8));
+
+    }
+
+    @Transaction()
+    public String readAccept(Context ctx, String id) throws UnsupportedEncodingException{
+        byte[] acc = ctx.getStub().getPrivateData("CollectionOne", id);
+        String accString = new String(acc, "UTF-8");
+        AcceptRule acr = AcceptRule.fromJSONString(accString);
+        return acr.toString1();
+    }
+    
 }
+
