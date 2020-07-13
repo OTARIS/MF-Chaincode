@@ -88,13 +88,28 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public void META_delete(Context ctx){
-        boolean exists = objectExists(ctx, META_DEF_ID);
+    public boolean privateObjectExists(Context ctx, String id) {
+        byte[] buffer = ctx.getStub().getPrivateDataHash("CollectionOne", id);
+        return (buffer != null && buffer.length > 0);
+    }
+
+    @Transaction()
+    public void deleteObject(Context ctx, String id){
+        boolean exists = objectExists(ctx, id);
         if (!exists) {
-            throw new RuntimeException("The metaDef does not exist");
+            throw new RuntimeException("The object does not exist");
         }
-        ctx.getStub().delState(META_DEF_ID);
+        ctx.getStub().delState(id);
     } 
+
+    @Transaction()
+    public void deleteMyPrivateObject(Context ctx, String id) {
+        boolean exists = privateObjectExists(ctx, id);
+        if (!exists) {
+            throw new RuntimeException("The private asset " + id + " does not exist");
+        }
+        ctx.getStub().delPrivateData("CollectionOne", id);
+    }
 
     //########################################################################################
 
@@ -272,28 +287,51 @@ public class NutriSafeContract implements ContractInterface {
 // AcceptRule###################################################################
 
     @Transaction()
-    public void addRuleNameAndCondition(Context ctx, String ruleName, String[] attributes, String[] rules){
-        //if (!objectExists(ctx, ctx.getClientIdentity().getMSPID() + ACR_STRING)){
-        //  AcceptRule acceptRule = new AcceptRule();
-
-        //}
-    }
-
-    @Transaction()
-    public void addNewAccept(Context ctx,String id, String test){
+    public void addRuleNameAndCondition(Context ctx, String product) throws UnsupportedEncodingException{
         AcceptRule acceptRule = new AcceptRule();
-        acceptRule.setTest(test);
-        ctx.getStub().putPrivateData("CollectionOne", id, acceptRule.toJSONString().getBytes(UTF_8));
-
+        String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
+        if (privateObjectExists(ctx, acrKey)){    
+            //AcceptRule acceptRuleOld = readAccept(ctx);  
+            //acceptRule.setProductToAttributeAndRule(acceptRuleOld.getProductToAttributeAndRule());    
+            //byte[] acc = ctx.getStub().getPrivateData("CollectionOne", acrKey);
+            //String accString = new String(acc, "UTF-8");
+            //acceptRule = AcceptRule.fromJSONString(accString);     
+        }
+        Map<String, byte[]> transientData = ctx.getStub().getTransient();   
+        if (transientData.size() != 0) {
+            for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
+                acceptRule.addEntryToProductToAttributeAndRule(product, entry.getKey(), new String(entry.getValue(), "UTF-8"));
+            }
+            ctx.getStub().putPrivateData("CollectionOne", acrKey, acceptRule.toJSONString().getBytes(UTF_8));
+            
+        } 
+        else {
+            throw new RuntimeException("No transient data passed");
+        }
     }
 
     @Transaction()
-    public String readAccept(Context ctx, String id) throws UnsupportedEncodingException{
-        byte[] acc = ctx.getStub().getPrivateData("CollectionOne", id);
+    public AcceptRule readAccept(Context ctx) throws UnsupportedEncodingException{
+        byte[] acc = ctx.getStub().getPrivateData("CollectionOne", ctx.getClientIdentity().getMSPID() + ACR_STRING);
         String accString = new String(acc, "UTF-8");
         AcceptRule acr = AcceptRule.fromJSONString(accString);
-        return acr.toString1();
+        
+        return acr;
     }
+    /*
+    @Transaction()
+    public HashMap<String, HashMap<String, String>> readAccept1(Context ctx, String key) throws UnsupportedEncodingException{
+        byte[] acc = ctx.getStub().getPrivateData("CollectionOne", ctx.getClientIdentity().getMSPID() + ACR_STRING);
+        String accString = new String(acc, "UTF-8");
+        AcceptRule acr = AcceptRule.fromJSONString(accString);
+        AcceptRule acNew = new AcceptRule();
+        acNew.setProductToAttributeAndRule(acr.getProductToAttributeAndRule());
+        //acNew.addEntryToProductToAttributeAndRule("milklot", "hallowelr", "jbjhbjb");
+        ctx.getStub().putPrivateData("CollectionOne", ctx.getClientIdentity().getMSPID() + ACR_STRING, acNew.toJSONString().getBytes(UTF_8));
+        return acNew.getProductToAttributeAndRule();
+    }
+    */
+   
     
 }
 

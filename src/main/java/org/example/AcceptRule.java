@@ -17,10 +17,7 @@ public class AcceptRule {
 
     @Property()
     HashMap<String, HashMap<String, String>> productToAttributeAndRule = new HashMap<>();
-    //(MilchRule, {(quality, gt10), (quantity, lt5)})
-
-
-
+    //(milklot, {(quality, gt10), (quantity, lt5)})
 
     public AcceptRule(){
 
@@ -34,12 +31,17 @@ public class AcceptRule {
         return productToAttributeAndRule;
     }
 
-    public void addEntryToProductToAttributeAndRule(String ruleName, String[] attributeNames, String[] condition){
-        HashMap<String, String> attributeToCondition = new HashMap<>();
-        for (int i = 0; i < attributeNames.length; i++){
-            attributeToCondition.put(attributeNames[i], condition[i]);
+    public void addEntryToProductToAttributeAndRule(String product, String attributeName, String condition){
+        if (productToAttributeAndRule.containsKey(product)){
+            HashMap<String, String> attributeAndRule = productToAttributeAndRule.get(product);
+            attributeAndRule.put(attributeName, condition);
+            productToAttributeAndRule.put(product, attributeAndRule);
         }
-        productToAttributeAndRule.put(ruleName, attributeToCondition);
+        else {
+            HashMap<String, String> attributeAndRule = new HashMap<>();
+            attributeAndRule.put(attributeName, condition);
+            productToAttributeAndRule.put(product, attributeAndRule);
+        }
     }
 
     
@@ -62,7 +64,7 @@ public class AcceptRule {
         
         String productToAttributeAndRuleString = new JSONObject(json).get("productToAttributeAndRule").toString();
         HashMap<String, HashMap<String, String>>  ProductToRuleMap = new Gson().fromJson(
-            productToAttributeAndRuleString, new TypeToken<HashMap<String, HashMap<String, String>> >() {}.getType()
+            productToAttributeAndRuleString, new TypeToken<HashMap<String, HashMap<String, String>>>() {}.getType()
         );
         acceptRule.setProductToAttributeAndRule(ProductToRuleMap);
 

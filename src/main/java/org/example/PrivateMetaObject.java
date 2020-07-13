@@ -15,7 +15,6 @@ public class PrivateMetaObject {
     @Property()
     HashMap<String, String> attributes = new HashMap<>();
     
-
     public PrivateMetaObject(){
 
     }
