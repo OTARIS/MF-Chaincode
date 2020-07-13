@@ -103,7 +103,7 @@ public class NutriSafeContract implements ContractInterface {
     } 
 
     @Transaction()
-    public void deleteMyPrivateObject(Context ctx, String id) {
+    public void deletePrivateObject(Context ctx, String id) {
         boolean exists = privateObjectExists(ctx, id);
         if (!exists) {
             throw new RuntimeException("The private asset " + id + " does not exist");
@@ -176,12 +176,55 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public void setReceiver(Context ctx, String id, String receiver){
+    public void setReceiver(Context ctx, String id, String receiver, String timeStamp) throws UnsupportedEncodingException{
         if (objectExists(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             if (metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())){
-                metaObject.setReceiver(receiver);
+
+                if (privateObjectExists(ctx, receiver + ACR_STRING)){
+                    AcceptRule acceptRule = readAccept(ctx, receiver);
+                    HashMap<String, HashMap<String, String>> rules = acceptRule.getProductToAttributeAndRule();
+                    if (rules.containsKey(metaObject.getDataName())){
+                        HashMap<String, String> attributeToCondition = rules.get(metaObject.getDataName());
+                        HashMap<String, String> attributes = metaObject.getAttributes();
+                        boolean allConditionsTrue = true;
+                        for (Map.Entry<String, String> entry : attributeToCondition.entrySet()){
+                            String condition = entry.getValue();
+                            String operator = condition.substring(0,2);
+                            condition = condition.substring(2, condition.length());
+                            
+
+                            switch(operator){
+                                
+                                case "eq":
+                                    if (!attributes.get(entry.getKey()).equals(condition)) allConditionsTrue = false;
+                                
+                            }
+
+                    
+                        }
+                        if (allConditionsTrue){
+                            metaObject.addTsAndOwner(timeStamp, receiver);
+                        }
+                        else {
+                            metaObject.setReceiver(receiver); 
+                        }
+
+
+                    }
+                    else {
+                        metaObject.setReceiver(receiver);                       
+                    }
+
+
+                }
+                else {
+                    metaObject.setReceiver(receiver);                  
+                }
                 ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
+
+
+               
             }
             else {
                 throw new RuntimeException("You (" + ctx.getClientIdentity().getMSPID() + ") are not the actual owner");
@@ -311,13 +354,25 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public AcceptRule readAccept(Context ctx) throws UnsupportedEncodingException{
-        byte[] acc = ctx.getStub().getPrivateData("CollectionOne", ctx.getClientIdentity().getMSPID() + ACR_STRING);
+    public AcceptRule readAccept(Context ctx, String id) throws UnsupportedEncodingException{
+        byte[] acc = ctx.getStub().getPrivateData("CollectionOne", id + ACR_STRING);
         String accString = new String(acc, "UTF-8");
         AcceptRule acr = AcceptRule.fromJSONString(accString);
         
         return acr;
     }
+
+
+
+
+
+
+
+
+
+
+
+
     /*
     @Transaction()
     public HashMap<String, HashMap<String, String>> readAccept1(Context ctx, String key) throws UnsupportedEncodingException{
