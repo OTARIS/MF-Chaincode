@@ -66,10 +66,10 @@ public class MetaDef {
     public void createSampleData(){
         ArrayList<String> sample = new ArrayList<>();
         sample.add("Quality");
-        sample.add("Quantity");
+        sample.add("AmountInLiter");
         dataNameToFieldMap.put("milklot", sample);
         fieldToTypeMap.put("Quality", "String");
-        fieldToTypeMap.put("Quantity", "Integer");
+        fieldToTypeMap.put("AmountInLiter", "Integer");
     }
 
     public String toJSONString() {
