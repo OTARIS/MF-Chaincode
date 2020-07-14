@@ -91,10 +91,7 @@ public class MetaDef {
         );
         metaDef.setFieldToTypeMap(fieldTypeMap);
 
-        return metaDef;
-        
-       
-        
+        return metaDef;     
     }
 
     
