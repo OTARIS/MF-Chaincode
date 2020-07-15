@@ -76,6 +76,14 @@ public class MetaDef {
         attributeToDataTypeMap.put("AmountInLiter", "Integer");
     }
 
+    @Override
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("Product name to attributes:" + productNameToAttributesMap.toString() + "\n");
+        sb.append("Attributes to data type:" + attributeToDataTypeMap.toString());
+        return sb.toString();
+    }
+
     public String toJSONString() {
         return new JSONObject(this).toString();
     }

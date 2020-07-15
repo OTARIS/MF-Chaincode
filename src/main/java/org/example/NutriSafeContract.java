@@ -34,52 +34,9 @@ public class NutriSafeContract implements ContractInterface {
     private String PDC_STRING = "_P";
     private String ACR_STRING = "_ACR";
 
-    public  NutriSafeContract() {
-    }
+    public  NutriSafeContract() {}
 
-    //## META ######################################################################################
-    @Transaction()
-    public void META_createSampleData(Context ctx){
-        MetaDef metaDef = new MetaDef();
-        metaDef.createSampleData();
-        ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));     
-    }
-
-    @Transaction()
-    public MetaDef META_readMetaDef(Context ctx){
-        MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
-        return metaDef;
-    }
-
-    @Transaction()
-    public void META_addFieldType(Context ctx, String dataField, String dataType){
-        MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
-        if (metaDef.fieldExists(dataField)){
-            throw new RuntimeException("The dataField "+dataField+" already exists");
-        }
-        else {
-            metaDef.addFieldType(dataField, dataType);
-            ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));
-        }
-    }
-
-    @Transaction()
-    public void META_addDataName(Context ctx, String dataName, String[] fieldNames){
-        MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));           
-        ArrayList<String> fieldNameArray = new ArrayList<>();
-        HashMap<String, String> allowedFields = metaDef.getFieldToTypeMap();
-        for (int i = 0; i < fieldNames.length; i++){
-            if (allowedFields.containsKey(fieldNames[i])){
-                fieldNameArray.add(fieldNames[i]);
-            }
-            else {
-                throw new RuntimeException("The field " +fieldNames[i] + " is not defined");
-                
-            }
-        }
-        metaDef.addDataName(dataName, fieldNameArray);
-        ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));      
-    }
+    /* #region utils */
 
     @Transaction()
     public boolean objectExists(Context ctx, String id){
@@ -88,8 +45,8 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public boolean privateObjectExists(Context ctx, String id) {
-        byte[] buffer = ctx.getStub().getPrivateDataHash("CollectionOne", id);
+    public boolean privateObjectExists(Context ctx, String id, String pdc) {
+        byte[] buffer = ctx.getStub().getPrivateDataHash(pdc, id);
         return (buffer != null && buffer.length > 0);
     }
 
@@ -103,48 +60,105 @@ public class NutriSafeContract implements ContractInterface {
     } 
 
     @Transaction()
-    public void deletePrivateObject(Context ctx, String id) {
-        boolean exists = privateObjectExists(ctx, id);
+    public void deletePrivateObject(Context ctx, String id, String pdc) {
+        boolean exists = privateObjectExists(ctx, id, pdc);
         if (!exists) {
-            throw new RuntimeException("The private asset " + id + " does not exist");
+            throw new RuntimeException("The private asset " +id+ " in the collection " +pdc+ " does not exist");
         }
-        ctx.getStub().delPrivateData("CollectionOne", id);
+        ctx.getStub().delPrivateData(pdc, id);
     }
 
-    //########################################################################################
+    /* #endregion */
+
+    /* #region META definitions */
 
     @Transaction()
-    public void createObject(Context ctx, String id, String pdcName, String dataName, String[] attrNames, String[] attrValues, String timeStamp)throws UnsupportedEncodingException{
-        //TODO Prüfung auf richtigen Datentyp
+    public String META_createSampleData(Context ctx){
+        MetaDef metaDef = new MetaDef();
+        metaDef.createSampleData();
+        ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8)); 
+        return metaDef.toString();    
+    }
+
+    @Transaction()
+    public MetaDef META_readMetaDef(Context ctx){
+        if (objectExists(ctx, META_DEF_ID)){
+            MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
+            return metaDef;
+        }
+        else {
+            throw new RuntimeException("The MetaDef does not exist");
+        }
+    }
+
+    @Transaction()
+    public void META_addAttributeDefinition(Context ctx, String attribute, String dataType){
+        if (objectExists(ctx, META_DEF_ID)){
+            MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
+            metaDef.addAttributeDefinition(attribute, dataType);
+            ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));         
+        }
+    }
+
+    @Transaction()
+    public void META_addProductDefinition(Context ctx, String productName, String[] attributes){
+        if (objectExists(ctx, META_DEF_ID)){
+            MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));           
+            ArrayList<String> attributesArray = new ArrayList<>();
+            HashMap<String, String> allowedAttributes = metaDef.getAttributeToDataTypeMap();
+            for (int i = 0; i < attributes.length; i++){
+                if (allowedAttributes.containsKey(attributes[i])){
+                    attributesArray.add(attributes[i]);
+                }
+                else {
+                    throw new RuntimeException("The attribute " +attributes[i] + " is not defined");
+                    
+                }
+            }
+            metaDef.addProductDefinition(productName, attributesArray);
+            ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));    
+        }  
+    }
+
+    /* #endregion */
+
+    /* #region META objects */
+
+    @Transaction()
+    public void createObject(Context ctx, String id, String pdc, String productName, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
         if (!objectExists(ctx, id)){
             MetaDef metaDef = META_readMetaDef(ctx);           
-            if (metaDef.dataNameExists(dataName)){
-                List<String> allowedAttr = metaDef.getFieldsByDataName(dataName);
-                boolean allAttrAllowed = true;
-                for(String attr : attrNames){
-                    if (!allowedAttr.contains(attr)) allAttrAllowed = false;
+            if (metaDef.productNameExists(productName)){
+                List<String> allowedAttr = metaDef.getAttributesByProductName(productName);
+                int i = 0;
+                for(String attr : attributes){
+                    if (!allowedAttr.contains(attr)) throw new RuntimeException("The attribute " +attr+ " is not defined");
+                    if (metaDef.getDataTypeByAttribute(attr) == "Integer"){
+                        if (!attrValues[i].matches("-?\\d+")) throw new RuntimeException("The attribute " +attr+ " is not an Integer");
+                    }
+                i++;
                 }
                 Map<String, byte[]> transientData = ctx.getStub().getTransient();
                 if (transientData.size() != 0) {
                     for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
-                        if (!allowedAttr.contains(entry.getKey())) allAttrAllowed = false;
+                        if (!allowedAttr.contains(entry.getKey())) throw new RuntimeException("The attribute " +entry.getKey()+ " is not defined");
                     }
-                }        
-                if (allAttrAllowed){
-                    MetaObject metaObject = new MetaObject(dataName, attrNames, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
-                    ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
-                    PrivateMetaObject privateMetaObject = new PrivateMetaObject();
+                }    
+
+                String timeStamp = ctx.getStub().getTxTimestamp().toString();
+                MetaObject metaObject = new MetaObject(pdc, productName, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
+                ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
+                
+                PrivateMetaObject privateMetaObject = new PrivateMetaObject();      
+                if (!pdc.equals("")) {
                     for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
                         privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
                     }
-                    ctx.getStub().putPrivateData(pdcName, id + PDC_STRING, privateMetaObject.toJSONString().getBytes(UTF_8));
-                }
-                else {
-                    throw new RuntimeException("At least one illegal attribute name recognized");
-                }
+                    ctx.getStub().putPrivateData(pdc, id + PDC_STRING, privateMetaObject.toJSONString().getBytes(UTF_8));
+                }       
             }
             else{
-                throw new RuntimeException("The dataName" +dataName+ "does not exist");
+                throw new RuntimeException("The product name" +productName+ " is not defined");
             }
         }
         else {
@@ -154,19 +168,16 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public String readObject(Context ctx, String id){
-        //TODO Name der PDC in MetaObject speichern
         if (objectExists(ctx, id)){
             String pmoString = "";
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
- 
-            try {
-                byte[] privateMetaObject = ctx.getStub().getPrivateData("CollectionOne", id + PDC_STRING);
-                pmoString = new String(privateMetaObject, "UTF-8");
-                //PrivateMetaObject pmo = PrivateMetaObject.fromJSONString(pmoString);
- 
-                
+            if (!metaObject.getPrivateDataCollection().equals("")){
+                try {
+                    byte[] privateMetaObject = ctx.getStub().getPrivateData(metaObject.getPrivateDataCollection(), id + PDC_STRING);
+                    pmoString = new String(privateMetaObject, "UTF-8");                  
+                }
+                catch (Exception e){}   
             }
-            catch (Exception e){}
             String result = metaObject.toString() + "Private Data: \n" + pmoString;
             return result;
         }      
@@ -176,55 +187,42 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public void setReceiver(Context ctx, String id, String receiver, String timeStamp) throws UnsupportedEncodingException{
+    public void setReceiver(Context ctx, String id, String receiver, String pdcOfACRRule) throws UnsupportedEncodingException{
         if (objectExists(ctx, id)){
+            HashMap<String, String> attributesToCheck = new HashMap<>();
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
+            if (!metaObject.getPrivateDataCollection().equals("")){
+                byte[] pmoArray = ctx.getStub().getPrivateData(metaObject.getPrivateDataCollection(), id + PDC_STRING);
+                String pmoString = new String(pmoArray, "UTF-8");  
+                PrivateMetaObject privateMetaObject = PrivateMetaObject.fromJSONString(pmoString);
+                attributesToCheck.putAll(privateMetaObject.getAttributes());
+            }
             if (metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())){
+                if (privateObjectExists(ctx, receiver + ACR_STRING, pdcOfACRRule)){  //AcceptRule definiton must be in the same PDC as the PrivateMetaObject
+                    AcceptRule acceptRule = readAccept(ctx, receiver, metaObject.getPrivateDataCollection());
+                    HashMap<String, HashMap<String, String>> acceptRules = acceptRule.getProductToAttributeAndRule();
+                    if (acceptRules.containsKey(metaObject.getProductName())){
+                        HashMap<String, String> attributeToCondition = acceptRules.get(metaObject.getProductName());
+                        attributesToCheck.putAll(metaObject.getAttributes());
 
-                if (privateObjectExists(ctx, receiver + ACR_STRING)){
-                    AcceptRule acceptRule = readAccept(ctx, receiver);
-                    HashMap<String, HashMap<String, String>> rules = acceptRule.getProductToAttributeAndRule();
-                    if (rules.containsKey(metaObject.getDataName())){
-                        HashMap<String, String> attributeToCondition = rules.get(metaObject.getDataName());
-                        HashMap<String, String> attributes = metaObject.getAttributes();
-                        boolean allConditionsTrue = true;
                         for (Map.Entry<String, String> entry : attributeToCondition.entrySet()){
                             String condition = entry.getValue();
-                            String operator = condition.substring(0,2);
+                            String operator = condition.substring(0,2);  //eq, lt, gt
                             condition = condition.substring(2, condition.length());
                             
+          
+                            if (operator.equals("eq")) if (!attributesToCheck.get(entry.getKey()).equals(condition)) throw new RuntimeException("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " does not match the condition " + condition);
+                               
+                            else if (operator.equals("lt"))  if (!(Integer.parseInt(attributesToCheck.get(entry.getKey())) < Integer.parseInt(condition))) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not lower than " + condition);
 
-                            switch(operator){
-                                
-                                case "eq":
-                                    if (!attributes.get(entry.getKey()).equals(condition)) allConditionsTrue = false;
-                                
-                            }
-
-                    
+                            else if (operator.equals("gt"))   if (!(Integer.parseInt(attributesToCheck.get(entry.getKey())) > Integer.parseInt(condition))) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not greater than " + condition);                                  
+ 
+                                                  
                         }
-                        if (allConditionsTrue){
-                            metaObject.addTsAndOwner(timeStamp, receiver);
-                        }
-                        else {
-                            metaObject.setReceiver(receiver); 
-                        }
-
-
-                    }
-                    else {
-                        metaObject.setReceiver(receiver);                       
-                    }
-
-
+                    }                                      
                 }
-                else {
-                    metaObject.setReceiver(receiver);                  
-                }
-                ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
-
-
-               
+                metaObject.setReceiver(receiver);                  
+                ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));               
             }
             else {
                 throw new RuntimeException("You (" + ctx.getClientIdentity().getMSPID() + ") are not the actual owner");
@@ -236,12 +234,12 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public void changeOwner(Context ctx, String id, String timeStamp){
+    public void changeOwner(Context ctx, String id){
         if (objectExists(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             if (metaObject.getReceiver().equals(ctx.getClientIdentity().getMSPID())){
                 metaObject.setReceiver("");
-                metaObject.addTsAndOwner(timeStamp, ctx.getClientIdentity().getMSPID());
+                metaObject.addTsAndOwner(ctx.getStub().getTxTimestamp().toString(), ctx.getClientIdentity().getMSPID());
                 metaObject.setActualOwner(ctx.getClientIdentity().getMSPID());
                 ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
             }
@@ -255,31 +253,43 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public void addPredecessor(Context ctx, String predecessorId, String id){
-        //TODO Übergabe von Liste an Predecessor
-        //TODO Prüfen ob man Eigentümer ist
-        if (objectExists(ctx, id) && objectExists(ctx, predecessorId)){
+    public void addPredecessor(Context ctx, String[] predecessorIds, String id){
+        if (objectExists(ctx, id)){
+            for (String preId : predecessorIds){
+                if (!objectExists(ctx, preId)) throw new RuntimeException("The ID "+preId+" does not exist");
+            }
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
-            metaObject.addPredecessor(predecessorId);
+            if (!metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) throw new RuntimeException("You are not the owner of " +id);
+            ArrayList<MetaObject> predecessors = new ArrayList<>();
+            for (String preId : predecessorIds){
+                predecessors.add(MetaObject.fromJSONString(new String(ctx.getStub().getState(preId))));
+            }
+            for (MetaObject preMetaObject : predecessors){
+                if (!preMetaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) throw new RuntimeException("You are not the owner of at least one predecessor");
+            }      
+            metaObject.addPredecessor(predecessorIds);
             ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
-            metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(predecessorId)));
-            metaObject.addSuccessor(id);
-            ctx.getStub().putState(predecessorId, metaObject.toJSONString().getBytes(UTF_8));
+
+            int i = 0;
+            for (MetaObject preMetaObject : predecessors){
+                preMetaObject.addSuccessor(id);
+                ctx.getStub().putState(predecessorIds[i], preMetaObject.toJSONString().getBytes(UTF_8));
+                i++;
+            }       
         }
-        else {
-            throw new RuntimeException("The ID "+id+" or "+predecessorId+  " does not exist");
-        }
+        else throw new RuntimeException("The ID "+id+" does not exist");
     }
 
     @Transaction()
     public void updateAttribute(Context ctx, String id, String attrName, String attrValue){
         //TODO update private data
+        //TODO Datetyp prüfen
         if (objectExists(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             MetaDef metaDef = META_readMetaDef(ctx);
-            List<String> allowedAttr = metaDef.getFieldsByDataName(metaObject.getDataName());
+            List<String> allowedAttr = metaDef.getAttributesByProductName(metaObject.getProductName());
             if (attrName != ""){
-                if (allowedAttr.contains(attrName) && attrName != ""){
+                if (allowedAttr.contains(attrName)){
                     metaObject.addAttribute(attrName, attrValue);
                     ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
                 }
@@ -288,19 +298,15 @@ public class NutriSafeContract implements ContractInterface {
                 }  
             }
             //TODO Derzeit müssen alle privaten Attribute nochmal erneut mitgegeben werden. Sollte geändert werden
-            boolean allAttrAllowed = true;
+ 
             Map<String, byte[]> transientData = ctx.getStub().getTransient();
             if (transientData.size() != 0) {
                 for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
-                    if (!allowedAttr.contains(entry.getKey())) allAttrAllowed = false;
+                    if (!allowedAttr.contains(entry.getKey())) throw new RuntimeException("The attrName "+entry.getKey()+  " is not defined");
                 }
             }
-            else {
-                allAttrAllowed = false;
-            } 
-
-            if (allAttrAllowed){
-                try {
+          
+            try {
                 //byte[] privateMetaObject = ctx.getStub().getPrivateData("CollectionOne", id + PDC_STRING);
                 //String pmoString = new String(privateMetaObject, "UTF-8");
                 //PrivateMetaObject pmo = PrivateMetaObject.fromJSONString(pmoString);
@@ -310,30 +316,24 @@ public class NutriSafeContract implements ContractInterface {
                     privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
                 }
                 ctx.getStub().putPrivateData("CollectionOne", id + PDC_STRING, privateMetaObject.toJSONString().getBytes(UTF_8));
-            }   
-                
-                
-                catch (Exception e){
-                    throw new RuntimeException("You are not allowed to change de PDC");
-                }
-            }
-
-
-            
+            }                
+            catch (Exception e){
+                throw new RuntimeException("You are not allowed to change de PDC");
+            }          
         }
         else {
             throw new RuntimeException("The ID "+id+" does not exist");
         }
-    }    
-
+    } 
+    
 
 // AcceptRule###################################################################
 
     @Transaction()
-    public void addRuleNameAndCondition(Context ctx, String product) throws UnsupportedEncodingException{
+    public void addRuleNameAndCondition(Context ctx, String product, String pdc) throws UnsupportedEncodingException{
         AcceptRule acceptRule = new AcceptRule();
         String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
-        if (privateObjectExists(ctx, acrKey)){    
+        if (privateObjectExists(ctx, acrKey, pdc)){    
             //AcceptRule acceptRuleOld = readAccept(ctx);  
             //acceptRule.setProductToAttributeAndRule(acceptRuleOld.getProductToAttributeAndRule());    
             //byte[] acc = ctx.getStub().getPrivateData("CollectionOne", acrKey);
@@ -345,7 +345,7 @@ public class NutriSafeContract implements ContractInterface {
             for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
                 acceptRule.addEntryToProductToAttributeAndRule(product, entry.getKey(), new String(entry.getValue(), "UTF-8"));
             }
-            ctx.getStub().putPrivateData("CollectionOne", acrKey, acceptRule.toJSONString().getBytes(UTF_8));
+            ctx.getStub().putPrivateData(pdc, acrKey, acceptRule.toJSONString().getBytes(UTF_8));
             
         } 
         else {
@@ -354,11 +354,10 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public AcceptRule readAccept(Context ctx, String id) throws UnsupportedEncodingException{
-        byte[] acc = ctx.getStub().getPrivateData("CollectionOne", id + ACR_STRING);
+    public AcceptRule readAccept(Context ctx, String id, String pdc) throws UnsupportedEncodingException{
+        byte[] acc = ctx.getStub().getPrivateData(pdc, id + ACR_STRING);
         String accString = new String(acc, "UTF-8");
-        AcceptRule acr = AcceptRule.fromJSONString(accString);
-        
+        AcceptRule acr = AcceptRule.fromJSONString(accString);      
         return acr;
     }
 

@@ -25,6 +25,9 @@ public class MetaObject {
     String receiver = "";
 
     @Property()
+    String privateDataCollection = "";
+
+    @Property()
     ArrayList<String> predecessor = new ArrayList<>();
 
     @Property()
@@ -42,14 +45,14 @@ public class MetaObject {
     public MetaObject(){
     }
 
-    public MetaObject(String productName, String[] attrNames, String[] attrValues, String timeStamp, String owner){
+    public MetaObject(String pdc, String productName, String[] attrNames, String[] attrValues, String timeStamp, String owner){
         this.productName = productName;
+        this.privateDataCollection = pdc;
         for (int i = 0; i < attrNames.length; i++){
             attributes.put(attrNames[i], attrValues[i]);
         }
         tsAndOwner.put(timeStamp, owner);
-        actualOwner = owner;
-        
+        actualOwner = owner;       
     }
 
     public String getProductName() {
@@ -66,6 +69,14 @@ public class MetaObject {
 
     public void setAlarmFlag(boolean alarmFlag){
         this.alarmFlag = alarmFlag;
+    }
+
+    public String getPrivateDataCollection() {
+        return privateDataCollection;
+    }
+
+    public void setPrivateDataCollection(String pdc) {
+        privateDataCollection = pdc;
     }
 
     public HashMap<String, String> getAttributes() {
@@ -113,7 +124,7 @@ public class MetaObject {
     }
 
     public void addSuccessor(String successor){
-        this.successor.add(successor);
+            this.successor.add(successor);      
     }
 
     public ArrayList<String> getSuccessor() {
@@ -124,8 +135,10 @@ public class MetaObject {
         this.predecessor = predecessor;
     }
 
-    public void addPredecessor(String predecessor){
-        this.predecessor.add(predecessor);
+    public void addPredecessor(String[] predecessor){
+        for (String pre : predecessor){
+            this.predecessor.add(pre);
+        }   
     }
 
     public ArrayList<String> getPredecessor() {
@@ -137,6 +150,7 @@ public class MetaObject {
         StringBuilder sb = new StringBuilder();
         sb.append("\n");
         sb.append("Name: " + productName + "\n");
+        sb.append("Private Data Collection: " + privateDataCollection + "\n");
         sb.append("Alarm flag: " + alarmFlag + "\n");
         sb.append("Receiver: " + receiver + "\n");
         sb.append("Actual Owner: " + actualOwner+ "\n");
@@ -154,7 +168,7 @@ public class MetaObject {
 
     public static MetaObject fromJSONString(String json) {
         MetaObject metaObject = new MetaObject();
-        String name = new JSONObject(json).getString("dataName");
+        String name = new JSONObject(json).getString("productName");
         metaObject.setProductName(name);
 
         boolean alarm = new JSONObject(json).getBoolean("alarmFlag");
@@ -162,6 +176,9 @@ public class MetaObject {
 
         String owner = new JSONObject(json).getString("actualOwner");
         metaObject.setActualOwner(owner);
+
+        String pdc = new JSONObject(json).getString("privateDataCollection");
+        metaObject.setPrivateDataCollection(pdc);
 
         String rec = new JSONObject(json).getString("receiver");
         metaObject.setReceiver(rec);
