@@ -9,67 +9,71 @@ import org.hyperledger.fabric.contract.annotation.DataType;
 import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
 
+/*
+The MetaDef defines the attributes and products available in this channel
+*/
+
 @DataType()
 public class MetaDef {
 
     @Property()
-    HashMap<String, List<String>> dataNameToFieldMap;
+    HashMap<String, List<String>> productNameToAttributesMap;
 
     @Property()
-    HashMap<String, String> fieldToTypeMap;
+    HashMap<String, String> attributeToDataTypeMap;
 
     public MetaDef(){
-        dataNameToFieldMap = new HashMap<>();
-        fieldToTypeMap = new HashMap<>();
+        productNameToAttributesMap = new HashMap<>();
+        attributeToDataTypeMap = new HashMap<>();
     }
 
-    public void addDataName(String dataName, List<String> fieldNames){
-        dataNameToFieldMap.put(dataName, fieldNames);
+    public void addProductDefinition(String productName, List<String> attributes){
+        productNameToAttributesMap.put(productName, attributes);
     }
 
-    public void addFieldType(String fieldName, String dataType){
-        fieldToTypeMap.put(fieldName, dataType);
+    public void addAttributeDefinition(String attribute, String dataType){
+        attributeToDataTypeMap.put(attribute, dataType);
     }
 
-    public void setDataNameToFieldMap(HashMap<String, List<String>> map){
-        dataNameToFieldMap = map;
+    public void setProductNameToAttributesMap(HashMap<String, List<String>> map){
+        productNameToAttributesMap = map;
     }
 
-    public void setFieldToTypeMap(HashMap<String, String> map){
-        fieldToTypeMap = map;
+    public HashMap<String, List<String>> getProductNameToAttributesMap(){
+        return productNameToAttributesMap;
     }
 
-    public HashMap<String, List<String>> getDataNameToFieldMap(){
-        return dataNameToFieldMap;
+    public List<String> getAttributesByProductName(String productName) {
+        return productNameToAttributesMap.get(productName);
     }
 
-    public HashMap<String, String> getFieldToTypeMap(){
-        return fieldToTypeMap;
+    public boolean productNameExists(String productName){
+        return productNameToAttributesMap.containsKey(productName);
     }
 
-    public List<String> getFieldsByDataName(String dataName) {
-        return dataNameToFieldMap.get(dataName);
+    public void setAttributeToDataTypeMap(HashMap<String, String> map){
+        attributeToDataTypeMap = map;
     }
 
-    public String getDataTypeByFieldName(String fieldName){
-        return fieldToTypeMap.get(fieldName);
+    public HashMap<String, String> getAttributeToDataTypeMap(){
+        return attributeToDataTypeMap;
     }
 
-    public boolean dataNameExists(String dataName){
-        return dataNameToFieldMap.containsKey(dataName);
+    public String getDataTypeByAttribute(String attribute){
+        return attributeToDataTypeMap.get(attribute);
     }
 
-    public boolean fieldExists(String fieldName){
-        return fieldToTypeMap.containsKey(fieldName);
+    public boolean attributeExists(String attribute){
+        return attributeToDataTypeMap.containsKey(attribute);
     }
 
     public void createSampleData(){
         ArrayList<String> sample = new ArrayList<>();
         sample.add("Quality");
         sample.add("AmountInLiter");
-        dataNameToFieldMap.put("milklot", sample);
-        fieldToTypeMap.put("Quality", "String");
-        fieldToTypeMap.put("AmountInLiter", "Integer");
+        productNameToAttributesMap.put("milklot", sample);
+        attributeToDataTypeMap.put("Quality", "String");
+        attributeToDataTypeMap.put("AmountInLiter", "Integer");
     }
 
     public String toJSONString() {
@@ -79,20 +83,18 @@ public class MetaDef {
     public static MetaDef fromJSONString(String json){
         MetaDef metaDef = new MetaDef();
 
-        String dataNameString = new JSONObject(json).get("dataNameToFieldMap").toString();
-        HashMap<String, List<String>> dataNameMap = new Gson().fromJson(
-            dataNameString, new TypeToken<HashMap<String, List<String>>>() {}.getType()
+        String productString = new JSONObject(json).get("productNameToAttributesMap").toString();
+        HashMap<String, List<String>> productMap = new Gson().fromJson(
+            productString, new TypeToken<HashMap<String, List<String>>>() {}.getType()
         );
-        metaDef.setDataNameToFieldMap(dataNameMap);
+        metaDef.setProductNameToAttributesMap(productMap);
 
-        String fieldTypeString = new JSONObject(json).get("fieldToTypeMap").toString();
-        HashMap<String, String> fieldTypeMap = new Gson().fromJson(
-            fieldTypeString, new TypeToken<HashMap<String, String>>() {}.getType()
+        String attributeString = new JSONObject(json).get("attributeToDataTypeMap").toString();
+        HashMap<String, String> attributeMap = new Gson().fromJson(
+            attributeString, new TypeToken<HashMap<String, String>>() {}.getType()
         );
-        metaDef.setFieldToTypeMap(fieldTypeMap);
+        metaDef.setAttributeToDataTypeMap(attributeMap);
 
         return metaDef;     
-    }
-
-    
+    }   
 }

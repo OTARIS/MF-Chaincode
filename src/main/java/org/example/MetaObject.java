@@ -9,7 +9,7 @@ import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
 
 /*
-A MetaObject defines the attributes and products available in this channel
+A MetaObject is a generic definition of the object stored in the blockchain
 */
 
 @DataType()
@@ -192,6 +192,4 @@ public class MetaObject {
 
         return metaObject;
     }
-
-    
 }
