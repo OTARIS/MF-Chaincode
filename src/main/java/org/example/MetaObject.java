@@ -8,6 +8,10 @@ import org.hyperledger.fabric.contract.annotation.DataType;
 import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
 
+/*
+A MetaObject defines the attributes and products available in this channel
+*/
+
 @DataType()
 public class MetaObject {
 
@@ -15,7 +19,7 @@ public class MetaObject {
     boolean alarmFlag = false; //TODO Implementierung
 
     @Property()
-    String dataName = "";
+    String productName = "";
 
     @Property()
     String receiver = "";
@@ -38,8 +42,8 @@ public class MetaObject {
     public MetaObject(){
     }
 
-    public MetaObject(String dataName, String[] attrNames, String[] attrValues, String timeStamp, String owner){
-        this.dataName = dataName;
+    public MetaObject(String productName, String[] attrNames, String[] attrValues, String timeStamp, String owner){
+        this.productName = productName;
         for (int i = 0; i < attrNames.length; i++){
             attributes.put(attrNames[i], attrValues[i]);
         }
@@ -48,12 +52,20 @@ public class MetaObject {
         
     }
 
-    public String getDataName() {
-        return dataName;
+    public String getProductName() {
+        return productName;
     }
 
-    public void setDataName(String name) {
-        dataName = name;
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public boolean getAlarmFlag() {
+        return alarmFlag;
+    }
+
+    public void setAlarmFlag(boolean alarmFlag){
+        this.alarmFlag = alarmFlag;
     }
 
     public HashMap<String, String> getAttributes() {
@@ -71,7 +83,6 @@ public class MetaObject {
     public void deleteAttribute(String attrName) {
         attributes.remove(attrName);
     }
-
 
     public void addTsAndOwner(String timeStamp, String owner){
         tsAndOwner.put(timeStamp, owner);
@@ -125,7 +136,8 @@ public class MetaObject {
     public String toString(){
         StringBuilder sb = new StringBuilder();
         sb.append("\n");
-        sb.append("Name: " + dataName + "\n");
+        sb.append("Name: " + productName + "\n");
+        sb.append("Alarm flag: " + alarmFlag + "\n");
         sb.append("Receiver: " + receiver + "\n");
         sb.append("Actual Owner: " + actualOwner+ "\n");
         sb.append("Attributes: " + attributes.toString() + "\n");
@@ -136,15 +148,17 @@ public class MetaObject {
     }
 
     public String toJSONString() {      
-        //return new JSONObject(this).toString();
         Gson gson = new Gson();
         return gson.toJson(this);
-        }
+    }
 
     public static MetaObject fromJSONString(String json) {
         MetaObject metaObject = new MetaObject();
         String name = new JSONObject(json).getString("dataName");
-        metaObject.setDataName(name);
+        metaObject.setProductName(name);
+
+        boolean alarm = new JSONObject(json).getBoolean("alarmFlag");
+        metaObject.setAlarmFlag(alarm);
 
         String owner = new JSONObject(json).getString("actualOwner");
         metaObject.setActualOwner(owner);
@@ -175,8 +189,6 @@ public class MetaObject {
             successorString, new TypeToken<ArrayList<String>>() {}.getType()
         );
         metaObject.setSuccessor(successorMap);
-
-
 
         return metaObject;
     }
