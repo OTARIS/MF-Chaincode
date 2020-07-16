@@ -91,6 +91,10 @@ public class MetaObject {
         attributes.put(attrName, attrValue);
     }
 
+    public void addAllAttributes(HashMap<String, String> map) {
+        attributes.putAll(map);
+    }
+
     public void deleteAttribute(String attrName) {
         attributes.remove(attrName);
     }

@@ -33,6 +33,7 @@ public class NutriSafeContract implements ContractInterface {
     private String META_DEF_ID = "METADEF";
     private String PDC_STRING = "_P";
     private String ACR_STRING = "_ACR";
+    private String AUTHORITY_PDC = "AUTH_PDC";
 
     public  NutriSafeContract() {}
 
@@ -333,7 +334,7 @@ public class NutriSafeContract implements ContractInterface {
     
     /* #endregion */
 
-/* #region Accept rules */
+    /* #region Accept rules */
 
     @Transaction()
     public void addRuleNameAndCondition(Context ctx, String product, String pdc) throws UnsupportedEncodingException{
@@ -383,31 +384,54 @@ public class NutriSafeContract implements ContractInterface {
         return acr;
     }
 
-
-
-
-
-
-
-
-
-
-
-
+    /* #endregion */
     
+    /* #region alarm handling */
+
+    //not tested
     @Transaction()
-    public String readAccept1(Context ctx) throws UnsupportedEncodingException{
-        byte[] acc = ctx.getStub().getPrivateData("CollectionOne", ctx.getClientIdentity().getMSPID() + ACR_STRING);
-        String accString = new String(acc, "UTF-8");
-        AcceptRule acr = AcceptRule.fromJSONString(accString);
-        //AcceptRule acNew = new AcceptRule();
-        //acr.setProductToAttributeAndRule(acr.getProductToAttributeAndRule());
-        acr.addEntryToProductToAttributeAndRule("milklot", "hallowelr", "jbjhbjb");
-        ctx.getStub().putPrivateData("CollectionOne", ctx.getClientIdentity().getMSPID() + ACR_STRING, acr.toJSONString().getBytes(UTF_8));
-        return acr.getProductToAttributeAndRule().toString();
+    public void activateAlarm(Context ctx, String id){
+        //TODO Prüfung auf Berechtigung
+
+        if (objectExists(ctx, id)){
+            MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
+            metaObject.setAlarmFlag(true);
+            ArrayList<String> successors = metaObject.getSuccessor();
+            for (String suc : successors){
+                MetaObject sucMetaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(suc)));
+                sucMetaObject.setAlarmFlag(true);
+            }
+        }
+        throw new RuntimeException("The ID "+id+" does not exist");
     }
-    
-   
-    
+
+    //not tested
+    @Transaction()
+    public void exportDataToAuthPDC(Context ctx, String id) throws UnsupportedEncodingException{
+        if (objectExists(ctx, id)){
+            MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
+            HashMap<String, String> attributes = new HashMap<>();
+            if (metaObject.getAlarmFlag() == true){
+                if (metaObject.getPrivateDataCollection().length() > 2){
+                    byte[] pmoArray = ctx.getStub().getPrivateData(metaObject.getPrivateDataCollection(), id + PDC_STRING);
+                    String pmoString = new String(pmoArray, "UTF-8");
+                    PrivateMetaObject privateMetaObject = PrivateMetaObject.fromJSONString(pmoString); 
+                    attributes.putAll(privateMetaObject.getAttributes());
+                }  
+                metaObject.addAllAttributes(attributes);
+                ctx.getStub().putPrivateData(AUTHORITY_PDC, id,metaObject.toJSONString().getBytes(UTF_8));
+            }
+            else {
+                throw new RuntimeException("The alarm flag for " +id+  "is set to false");
+            }
+
+        }
+        else {
+            throw new RuntimeException("The ID "+id+" does not exist");
+        }
+
+    }
+
+    /* #endregion */
 }
 
