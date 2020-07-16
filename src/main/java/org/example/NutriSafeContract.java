@@ -187,8 +187,9 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public HashMap<String, String> setReceiver(Context ctx, String id, String receiver, String pdcOfACRRule) throws UnsupportedEncodingException{
+    public String setReceiver(Context ctx, String id, String receiver, String pdcOfACRRule) throws UnsupportedEncodingException{
         HashMap<String, String> attributesToCheck = new HashMap<>();
+        String returnV = "";
         if (objectExists(ctx, id)){
             
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
@@ -210,10 +211,19 @@ public class NutriSafeContract implements ContractInterface {
                             String condition = entry.getValue();
                             String operator = condition.substring(0,2);  //eq, lt, gt
                             condition = condition.substring(2, condition.length());                               
-                            if (operator.equals("eq")) if (!attributesToCheck.get(entry.getKey()).equals(condition)) throw new RuntimeException("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " does not match the condition " + condition);                               
-                            else if (operator.equals("lt"))  if (!(Integer.parseInt(attributesToCheck.get(entry.getKey())) < Integer.parseInt(condition))) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not lower than " + condition);
-                            else if (operator.equals("gt"))  if (!(Integer.parseInt(attributesToCheck.get(entry.getKey())) > Integer.parseInt(condition))) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not greater than " + condition);                                                                                   
-                        }
+                            if (operator.equals("eq")){
+                                returnV += "eq";
+                                if (!attributesToCheck.get(entry.getKey()).equals(condition)) throw new RuntimeException("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " does not match the condition " + condition);                               
+                            }
+                            else if (operator.equals("lt")){
+                                returnV += "lt";
+                                 if (Integer.parseInt(attributesToCheck.get(entry.getKey())) >= Integer.parseInt(condition)) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not lower than " + condition);
+                            }
+                            else if (operator.equals("gt")){
+                                returnV += "gt";
+                                  if (Integer.parseInt(attributesToCheck.get(entry.getKey())) <= Integer.parseInt(condition)) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not greater than " + condition);                                                                                   
+                            }
+                        }                                            
                     }                                      
                 }
                 metaObject.setReceiver(receiver);                  
@@ -226,7 +236,7 @@ public class NutriSafeContract implements ContractInterface {
         else {
             throw new RuntimeException("The ID "+id+" does not exist");
         }
-        return attributesToCheck;
+        return returnV;
     }
 
     @Transaction()
@@ -293,7 +303,6 @@ public class NutriSafeContract implements ContractInterface {
                     throw new RuntimeException("The attrName "+attrName+  " is not defined");
                 }  
             }
-            //TODO Derzeit müssen alle privaten Attribute nochmal erneut mitgegeben werden. Sollte geändert werden
  
             Map<String, byte[]> transientData = ctx.getStub().getTransient();
             if (transientData.size() != 0) {
@@ -301,21 +310,21 @@ public class NutriSafeContract implements ContractInterface {
                     if (!allowedAttr.contains(entry.getKey())) throw new RuntimeException("The attrName "+entry.getKey()+  " is not defined");
                 }
             }
-          
-            try {
-                //byte[] privateMetaObject = ctx.getStub().getPrivateData("CollectionOne", id + PDC_STRING);
-                //String pmoString = new String(privateMetaObject, "UTF-8");
-                //PrivateMetaObject pmo = PrivateMetaObject.fromJSONString(pmoString);
-
-                PrivateMetaObject privateMetaObject = new PrivateMetaObject();
-                for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
-                    privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
-                }
-                ctx.getStub().putPrivateData("CollectionOne", id + PDC_STRING, privateMetaObject.toJSONString().getBytes(UTF_8));
-            }                
-            catch (Exception e){
-                throw new RuntimeException("You are not allowed to change de PDC");
-            }          
+            if (metaObject.getPrivateDataCollection().length() > 2){
+                try {
+                    byte[] pmoArray = ctx.getStub().getPrivateData(metaObject.getPrivateDataCollection(), id + PDC_STRING);
+                    String pmoString = new String(pmoArray, "UTF-8");
+                    PrivateMetaObject privateMetaObject = PrivateMetaObject.fromJSONString(pmoString);
+                    
+                    for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
+                        privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
+                    }
+                    ctx.getStub().putPrivateData(metaObject.getPrivateDataCollection(), id + PDC_STRING, privateMetaObject.toJSONString().getBytes(UTF_8));
+                }                
+                catch (Exception e){
+                    throw new RuntimeException("You are not allowed to change de PDC");
+                }    
+            }      
         }
         else {
             throw new RuntimeException("The ID "+id+" does not exist");
@@ -330,11 +339,9 @@ public class NutriSafeContract implements ContractInterface {
         AcceptRule acceptRule = new AcceptRule();
         String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
         if (privateObjectExists(ctx, acrKey, pdc)){    
-            //AcceptRule acceptRuleOld = readAccept(ctx);  
-            //acceptRule.setProductToAttributeAndRule(acceptRuleOld.getProductToAttributeAndRule());    
-            //byte[] acc = ctx.getStub().getPrivateData("CollectionOne", acrKey);
-            //String accString = new String(acc, "UTF-8");
-            //acceptRule = AcceptRule.fromJSONString(accString);     
+            byte[] acc = ctx.getStub().getPrivateData(pdc, acrKey);
+            String accString = new String(acc, "UTF-8");
+            acceptRule = AcceptRule.fromJSONString(accString);     
         }
         Map<String, byte[]> transientData = ctx.getStub().getTransient();   
         if (transientData.size() != 0) {
@@ -368,19 +375,19 @@ public class NutriSafeContract implements ContractInterface {
 
 
 
-    /*
+    
     @Transaction()
-    public HashMap<String, HashMap<String, String>> readAccept1(Context ctx, String key) throws UnsupportedEncodingException{
+    public String readAccept1(Context ctx) throws UnsupportedEncodingException{
         byte[] acc = ctx.getStub().getPrivateData("CollectionOne", ctx.getClientIdentity().getMSPID() + ACR_STRING);
         String accString = new String(acc, "UTF-8");
         AcceptRule acr = AcceptRule.fromJSONString(accString);
-        AcceptRule acNew = new AcceptRule();
-        acNew.setProductToAttributeAndRule(acr.getProductToAttributeAndRule());
-        //acNew.addEntryToProductToAttributeAndRule("milklot", "hallowelr", "jbjhbjb");
-        ctx.getStub().putPrivateData("CollectionOne", ctx.getClientIdentity().getMSPID() + ACR_STRING, acNew.toJSONString().getBytes(UTF_8));
-        return acNew.getProductToAttributeAndRule();
+        //AcceptRule acNew = new AcceptRule();
+        //acr.setProductToAttributeAndRule(acr.getProductToAttributeAndRule());
+        acr.addEntryToProductToAttributeAndRule("milklot", "hallowelr", "jbjhbjb");
+        ctx.getStub().putPrivateData("CollectionOne", ctx.getClientIdentity().getMSPID() + ACR_STRING, acr.toJSONString().getBytes(UTF_8));
+        return acr.getProductToAttributeAndRule().toString();
     }
-    */
+    
    
     
 }
