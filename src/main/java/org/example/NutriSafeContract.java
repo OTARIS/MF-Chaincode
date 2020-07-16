@@ -187,11 +187,12 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public void setReceiver(Context ctx, String id, String receiver, String pdcOfACRRule) throws UnsupportedEncodingException{
+    public HashMap<String, String> setReceiver(Context ctx, String id, String receiver, String pdcOfACRRule) throws UnsupportedEncodingException{
+        HashMap<String, String> attributesToCheck = new HashMap<>();
         if (objectExists(ctx, id)){
-            HashMap<String, String> attributesToCheck = new HashMap<>();
+            
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
-            if (!metaObject.getPrivateDataCollection().equals("")){
+            if (metaObject.getPrivateDataCollection().length() >= 3){
                 byte[] pmoArray = ctx.getStub().getPrivateData(metaObject.getPrivateDataCollection(), id + PDC_STRING);
                 String pmoString = new String(pmoArray, "UTF-8");  
                 PrivateMetaObject privateMetaObject = PrivateMetaObject.fromJSONString(pmoString);
@@ -208,16 +209,10 @@ public class NutriSafeContract implements ContractInterface {
                         for (Map.Entry<String, String> entry : attributeToCondition.entrySet()){
                             String condition = entry.getValue();
                             String operator = condition.substring(0,2);  //eq, lt, gt
-                            condition = condition.substring(2, condition.length());
-                            
-          
-                            if (operator.equals("eq")) if (!attributesToCheck.get(entry.getKey()).equals(condition)) throw new RuntimeException("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " does not match the condition " + condition);
-                               
+                            condition = condition.substring(2, condition.length());                               
+                            if (operator.equals("eq")) if (!attributesToCheck.get(entry.getKey()).equals(condition)) throw new RuntimeException("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " does not match the condition " + condition);                               
                             else if (operator.equals("lt"))  if (!(Integer.parseInt(attributesToCheck.get(entry.getKey())) < Integer.parseInt(condition))) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not lower than " + condition);
-
-                            else if (operator.equals("gt"))   if (!(Integer.parseInt(attributesToCheck.get(entry.getKey())) > Integer.parseInt(condition))) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not greater than " + condition);                                  
- 
-                                                  
+                            else if (operator.equals("gt"))  if (!(Integer.parseInt(attributesToCheck.get(entry.getKey())) > Integer.parseInt(condition))) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not greater than " + condition);                                                                                   
                         }
                     }                                      
                 }
@@ -231,6 +226,7 @@ public class NutriSafeContract implements ContractInterface {
         else {
             throw new RuntimeException("The ID "+id+" does not exist");
         }
+        return attributesToCheck;
     }
 
     @Transaction()

@@ -30,6 +30,6 @@
          "requiredPeerCount": 1,
          "maxPeerCount": 1,
          "blockToLive": 0,
-         "memberOnlyRead": true
+         "memberOnlyRead": false
     }
 ]
