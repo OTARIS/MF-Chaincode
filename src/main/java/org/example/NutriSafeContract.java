@@ -331,8 +331,9 @@ public class NutriSafeContract implements ContractInterface {
         }
     } 
     
+    /* #endregion */
 
-// AcceptRule###################################################################
+/* #region Accept rules */
 
     @Transaction()
     public void addRuleNameAndCondition(Context ctx, String product, String pdc) throws UnsupportedEncodingException{
@@ -354,6 +355,24 @@ public class NutriSafeContract implements ContractInterface {
         else {
             throw new RuntimeException("No transient data passed");
         }
+    }
+
+    //not tested
+    @Transaction()
+    public void deleteRuleForProduct(Context ctx, String product, String pdc) throws UnsupportedEncodingException{
+        String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
+        
+        if (privateObjectExists(ctx, acrKey, pdc)){ 
+            byte[] acc = ctx.getStub().getPrivateData(pdc, acrKey);
+            String accString = new String(acc, "UTF-8");
+            AcceptRule acceptRule = AcceptRule.fromJSONString(accString); 
+            acceptRule.deleteEntryFromProductToAttributeAndRule(product);
+            ctx.getStub().putPrivateData(pdc, acrKey, acceptRule.toJSONString().getBytes(UTF_8));
+        }
+        else {
+            throw new RuntimeException("There is no AcceptRule Object defined");
+        }
+
     }
 
     @Transaction()

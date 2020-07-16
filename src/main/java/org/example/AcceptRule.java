@@ -45,6 +45,12 @@ public class AcceptRule {
         }
     }
 
+    public void deleteEntryFromProductToAttributeAndRule(String product){
+        if (productToAttributeAndRule.containsKey(product)){
+            productToAttributeAndRule.remove(product);
+        }
+    }
+
     @Override
     public String toString(){
         return "ProductToRule: " + productToAttributeAndRule;
