@@ -337,7 +337,7 @@ public class NutriSafeContract implements ContractInterface {
     /* #region Accept rules */
 
     @Transaction()
-    public void addRuleNameAndCondition(Context ctx, String product, String pdc) throws UnsupportedEncodingException{
+    public void addRuleNameAndCondition(Context ctx, String pdc, String product) throws UnsupportedEncodingException{
         AcceptRule acceptRule = new AcceptRule();
         String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
         if (privateObjectExists(ctx, acrKey, pdc)){    
@@ -360,7 +360,7 @@ public class NutriSafeContract implements ContractInterface {
 
     //not tested
     @Transaction()
-    public void deleteRuleForProduct(Context ctx, String product, String pdc) throws UnsupportedEncodingException{
+    public void deleteRuleForProduct(Context ctx, String pdc, String product) throws UnsupportedEncodingException{
         String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
         
         if (privateObjectExists(ctx, acrKey, pdc)){ 
@@ -402,7 +402,9 @@ public class NutriSafeContract implements ContractInterface {
                 sucMetaObject.setAlarmFlag(true);
             }
         }
-        throw new RuntimeException("The ID "+id+" does not exist");
+        else {
+            throw new RuntimeException("The ID "+id+" does not exist");
+        }
     }
 
     //not tested
@@ -424,12 +426,10 @@ public class NutriSafeContract implements ContractInterface {
             else {
                 throw new RuntimeException("The alarm flag for " +id+  "is set to false");
             }
-
         }
         else {
             throw new RuntimeException("The ID "+id+" does not exist");
         }
-
     }
 
     /* #endregion */
