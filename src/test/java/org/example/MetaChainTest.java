@@ -134,8 +134,6 @@ public final class MetaChainTest {
             Map<String, byte[]> transientMap = new HashMap<>();
             transientMap.put("Color", "150".getBytes(StandardCharsets.UTF_8));
             when(stub.getTransient()).thenReturn(transientMap);
-
-
             String[] attributes = {"Quality"};
             String[] attrValues = {"good"};
             String result = contract.createObject(ctx, "MILK1", "CollectionOne", "milklot", attributes, attrValues);

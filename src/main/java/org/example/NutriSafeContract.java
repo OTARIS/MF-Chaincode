@@ -295,6 +295,7 @@ public class NutriSafeContract implements ContractInterface {
                                     response.put("response", "The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " does not match the condition " + condition);
                                     return response.toString();
                                 }
+                            }
                             else if (operator.equals("lt")){
                                 returnV += "lt";
                                 if (Integer.parseInt(attributesToCheck.get(entry.getKey())) >= Integer.parseInt(condition)){
@@ -330,7 +331,7 @@ public class NutriSafeContract implements ContractInterface {
             response.put("status", "400");
             response.put("response", "The object with the key " +id+ " does not exist");
             return response.toString();
-        }
+        }   
         
     }
 
