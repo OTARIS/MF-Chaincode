@@ -68,13 +68,14 @@ public final class MetaChainTest {
             String json = "{\"productNameToAttributesMap\":{\"milklot\":[\"Quality\",\"AmountInLiter\"]},\"attributeToDataTypeMap\":{\"AmountInLiter\":\"Integer\",\"Quality\":\"String\"}}";
             verify(stub).putState("METADEF", json.getBytes(UTF_8));
         }
-        
+        /*
         @Test
         public void readMetaDef() {           
             MetaDef returnedMetaDef = contract.META_readMetaDef(ctx);
             assertEquals(returnedMetaDef.getAttributeToDataTypeMap(), metaDef.getAttributeToDataTypeMap());
             assertEquals(returnedMetaDef.getProductNameToAttributesMap(), metaDef.getProductNameToAttributesMap());
         }
+        */
 
         @Test
         public void addAttributeDefinition(){

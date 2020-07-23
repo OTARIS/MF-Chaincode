@@ -58,10 +58,17 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public boolean privateObjectExists(Context ctx, String id, String pdc) {
-        byte[] buffer = ctx.getStub().getPrivateDataHash(pdc, id);
-        
+    public boolean privateObjectExistsIntern(Context ctx, String id, String pdc) {
+        byte[] buffer = ctx.getStub().getPrivateDataHash(pdc, id);        
         return (buffer != null && buffer.length > 0);
+    }
+
+    @Transaction()
+    public String privateObjectExists(Context ctx, String id, String pdc) {
+        response.put("status", "200");
+        byte[] buffer = ctx.getStub().getPrivateDataHash(pdc, id);       
+        response.put("response", (buffer != null && buffer.length > 0));
+        return response.toString();
     }
 
     @Transaction()
@@ -79,12 +86,16 @@ public class NutriSafeContract implements ContractInterface {
     } 
 
     @Transaction()
-    public void deletePrivateObject(Context ctx, String id, String pdc) {
-        boolean exists = privateObjectExists(ctx, id, pdc);
+    public String deletePrivateObject(Context ctx, String id, String pdc) {
+        boolean exists = privateObjectExistsIntern(ctx, id, pdc);
         if (!exists) {
-            throw new RuntimeException("The private asset " +id+ " in the collection " +pdc+ " does not exist");
+            response.put("status", "400");
+            response.put("response", "The object with the key " +id+ " does not exist in the private data collection " +pdc);
         }
         ctx.getStub().delPrivateData(pdc, id);
+        response.put("status", "200");
+        response.put("response", "The object with the key " +id+ " was deleted from the private data collection " +pdc);
+        return response.toString();
     }
 
     /* #endregion */
@@ -93,35 +104,48 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public String META_createSampleData(Context ctx){
-        MetaDef metaDef = new MetaDef();
-        
+        MetaDef metaDef = new MetaDef();       
         metaDef.createSampleData();
         ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8)); 
-        return metaDef.toString();    
+        response.put("status", "200");
+        response.put("reponse", metaDef.toString());
+        return response.toString();   
     }
 
     @Transaction()
-    public MetaDef META_readMetaDef(Context ctx){
+    public String META_readMetaDef(Context ctx){
         if (objectExistsIntern(ctx, META_DEF_ID)){
             MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
-            return metaDef;
+            response.put("status", "200");
+            response.put("reponse", metaDef.toString());
+            return response.toString();
         }
         else {
-            throw new RuntimeException("The MetaDef does not exist");
+            response.put("status", "400");
+            response.put("response", "The meta def wiht the key " +META_DEF_ID+ " does not exist");
+            return response.toString();
         }
     }
 
     @Transaction()
-    public void META_addAttributeDefinition(Context ctx, String attribute, String dataType){
+    public String META_addAttributeDefinition(Context ctx, String attribute, String dataType){
         if (objectExistsIntern(ctx, META_DEF_ID)){
             MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
             metaDef.addAttributeDefinition(attribute, dataType);
-            ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));         
+            ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));  
+            response.put("status", "200");
+            response.put("reponse", metaDef.toString());
+            return response.toString(); 
+        }
+        else {
+            response.put("status", "400");
+            response.put("response", "The meta def wiht the key " +META_DEF_ID+ " does not exist");
+            return response.toString(); 
         }
     }
 
     @Transaction()
-    public void META_addProductDefinition(Context ctx, String productName, String[] attributes){
+    public String META_addProductDefinition(Context ctx, String productName, String[] attributes){
         if (objectExistsIntern(ctx, META_DEF_ID)){
             MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));           
             ArrayList<String> attributesArray = new ArrayList<>();
@@ -131,12 +155,22 @@ public class NutriSafeContract implements ContractInterface {
                     attributesArray.add(attributes[i]);
                 }
                 else {
-                    throw new RuntimeException("The attribute " +attributes[i] + " is not defined");                  
+                    response.put("status", "400");
+                    response.put("response", "The attribute " +attributes[i]+ " is not defined");
+                    return response.toString();                 
                 }
             }
             metaDef.addProductDefinition(productName, attributesArray);
-            ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));    
-        }  
+            ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));  
+            response.put("status", "200");
+            response.put("response", metaDef.toString());
+            return response.toString();  
+        }
+        else {
+            response.put("status", "400");
+            response.put("response", "The meta def wiht the key " +META_DEF_ID+ " does not exist");
+            return response.toString(); 
+        }
     }
 
     /* #endregion */
@@ -144,9 +178,9 @@ public class NutriSafeContract implements ContractInterface {
     /* #region META objects */
 
     @Transaction()
-    public void createObject(Context ctx, String id, String pdc, String productName, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
+    public String createObject(Context ctx, String id, String pdc, String productName, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
         if (!objectExistsIntern(ctx, id)){
-            MetaDef metaDef = META_readMetaDef(ctx);           
+            MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));             
             if (metaDef.productNameExists(productName)){
                 List<String> allowedAttr = metaDef.getAttributesByProductName(productName);
                 int i = 0;
@@ -163,7 +197,6 @@ public class NutriSafeContract implements ContractInterface {
                         if (!allowedAttr.contains(entry.getKey())) throw new RuntimeException("The attribute " +entry.getKey()+ " is not defined");
                     }
                 }    
-
                 String timeStamp = ctx.getStub().getTxTimestamp().toString();
                 MetaObject metaObject = new MetaObject(pdc, productName, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
                 ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
@@ -174,14 +207,21 @@ public class NutriSafeContract implements ContractInterface {
                         privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
                     }
                     ctx.getStub().putPrivateData(pdc, id + PDC_STRING, privateMetaObject.toJSONString().getBytes(UTF_8));
-                }       
+                }
+                response.put("status", "200");
+                response.put("response", metaObject.toString() + "Private Data: \n" + privateMetaObject.toString());
+                return response.toString();      
             }
             else{
-                throw new RuntimeException("The product name" +productName+ " is not defined");
+                response.put("status", "400");
+                response.put("response", "The product name" +productName+ " is not defined");
+                return response.toString();
             }
         }
         else {
-            throw new RuntimeException("The ID "+id+" already exists");
+            response.put("status", "400");
+            response.put("response", "The object with the key " +id+ " already exists");
+            return response.toString();
         }       
     }
 
@@ -196,12 +236,15 @@ public class NutriSafeContract implements ContractInterface {
                     pmoString = new String(privateMetaObject, "UTF-8");                  
                 }
                 catch (Exception e){}   
-            }
-            String result = metaObject.toString() + "Private Data: \n" + pmoString;
-            return result;
+            }          
+            response.put("status", "200");
+            response.put("response", metaObject.toString() + "Private Data: \n" + pmoString);
+            return response.toString();
         }      
         else {
-            throw new RuntimeException("The ID "+id+" does not exist");
+            response.put("status", "400");
+            response.put("response", "The object with the key " +id+ " does not exist");
+            return response.toString();
         }
     }
 
@@ -219,7 +262,7 @@ public class NutriSafeContract implements ContractInterface {
                 attributesToCheck.putAll(privateMetaObject.getAttributes());
             }
             if (metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())){
-                if (privateObjectExists(ctx, receiver + ACR_STRING, pdcOfACRRule)){  //AcceptRule definiton must be in the same PDC as the PrivateMetaObject
+                if (privateObjectExistsIntern(ctx, receiver + ACR_STRING, pdcOfACRRule)){  //AcceptRule definiton must be in the same PDC as the PrivateMetaObject
                     AcceptRule acceptRule = readAccept(ctx, receiver, metaObject.getPrivateDataCollection());
                     HashMap<String, HashMap<String, String>> acceptRules = acceptRule.getProductToAttributeAndRule();
                     if (acceptRules.containsKey(metaObject.getProductName())){
@@ -246,20 +289,27 @@ public class NutriSafeContract implements ContractInterface {
                     }                                      
                 }
                 metaObject.setReceiver(receiver);                  
-                ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));               
+                ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8)); 
+                response.put("status", "200");
+                response.put("response", metaObject.toString());
+                return response.toString();          
             }
             else {
-                throw new RuntimeException("You (" + ctx.getClientIdentity().getMSPID() + ") are not the actual owner");
+                response.put("status", "400");
+                response.put("response", "You (" + ctx.getClientIdentity().getMSPID() + ") are not the actual owner");
+                return response.toString();
             }
         }
         else {
-            throw new RuntimeException("The ID "+id+" does not exist");
+            response.put("status", "400");
+            response.put("response", "The object with the key " +id+ " does not exist");
+            return response.toString();
         }
-        return returnV;
+        
     }
 
     @Transaction()
-    public void changeOwner(Context ctx, String id){
+    public String changeOwner(Context ctx, String id){
         if (objectExistsIntern(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             if (metaObject.getReceiver().equals(ctx.getClientIdentity().getMSPID())){
@@ -267,21 +317,30 @@ public class NutriSafeContract implements ContractInterface {
                 metaObject.addTsAndOwner(ctx.getStub().getTxTimestamp().toString(), ctx.getClientIdentity().getMSPID());
                 metaObject.setActualOwner(ctx.getClientIdentity().getMSPID());
                 ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
+                response.put("status", "200");
+                response.put("response", metaObject.toString());
+                return response.toString();
             }
             else {
-                throw new RuntimeException("You (" + ctx.getClientIdentity().getMSPID() + ") are not the receiver");
+                response.put("status", "400");
+                response.put("response", "You (" + ctx.getClientIdentity().getMSPID() + ") are not the receiver");
+                return response.toString();
             }
         }
         else {
-            throw new RuntimeException("The ID "+id+" does not exist");
+            response.put("status", "400");
+            response.put("response", "The object with the key " +id+ " does not exist");
+            return response.toString();
         }
     }
 
     @Transaction()
-    public void addPredecessor(Context ctx, String[] predecessorIds, String id){
+    public String addPredecessor(Context ctx, String[] predecessorIds, String id){
         if (objectExistsIntern(ctx, id)){
             for (String preId : predecessorIds){
-                if (!objectExistsIntern(ctx, preId)) throw new RuntimeException("The ID "+preId+" does not exist");
+                response.put("status", "400");
+                response.put("response", "The object with the key " +preId+ " does not exist");
+                return response.toString();
             }
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             if (!metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) throw new RuntimeException("You are not the owner of " +id);
@@ -300,18 +359,24 @@ public class NutriSafeContract implements ContractInterface {
                 preMetaObject.addSuccessor(id);
                 ctx.getStub().putState(predecessorIds[i], preMetaObject.toJSONString().getBytes(UTF_8));
                 i++;
-            }       
+            }    
+            response.put("status", "200");
+            response.put("response", metaObject.toString();
+            return response.toString();   
         }
-        else throw new RuntimeException("The ID "+id+" does not exist");
+        else {
+            response.put("status", "400");
+            response.put("response", "The object with the key " +id+ " does not exist");
+            return response.toString();
+        }
     }
 
     @Transaction()
-    public void updateAttribute(Context ctx, String id, String attrName, String attrValue){
-        //TODO update private data
+    public String updateAttribute(Context ctx, String id, String attrName, String attrValue){
         //TODO Datetyp prüfen
         if (objectExistsIntern(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
-            MetaDef metaDef = META_readMetaDef(ctx);
+            MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));   
             List<String> allowedAttr = metaDef.getAttributesByProductName(metaObject.getProductName());
             if (attrName != ""){
                 if (allowedAttr.contains(attrName)){
@@ -319,21 +384,28 @@ public class NutriSafeContract implements ContractInterface {
                     ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
                 }
                 else {
-                    throw new RuntimeException("The attrName "+attrName+  " is not defined");
+                    response.put("status", "400");
+                    response.put("response", "The attrName "+attrName+  " is not defined");
+                    return response.toString();
                 }  
             }
  
             Map<String, byte[]> transientData = ctx.getStub().getTransient();
             if (transientData.size() != 0) {
                 for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
-                    if (!allowedAttr.contains(entry.getKey())) throw new RuntimeException("The attrName "+entry.getKey()+  " is not defined");
+                    if (!allowedAttr.contains(entry.getKey())) {
+                        response.put("status", "400");
+                        response.put("response", "The attrName "+entry.getKey()+  " is not defined");
+                        return response.toString();
+                    }
                 }
             }
+            PrivateMetaObject privateMetaObject = new PrivateMetaObject();
             if (metaObject.getPrivateDataCollection().length() > 2){
                 try {
                     byte[] pmoArray = ctx.getStub().getPrivateData(metaObject.getPrivateDataCollection(), id + PDC_STRING);
                     String pmoString = new String(pmoArray, "UTF-8");
-                    PrivateMetaObject privateMetaObject = PrivateMetaObject.fromJSONString(pmoString);
+                    privateMetaObject = PrivateMetaObject.fromJSONString(pmoString);
                     
                     for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
                         privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
@@ -341,12 +413,19 @@ public class NutriSafeContract implements ContractInterface {
                     ctx.getStub().putPrivateData(metaObject.getPrivateDataCollection(), id + PDC_STRING, privateMetaObject.toJSONString().getBytes(UTF_8));
                 }                
                 catch (Exception e){
-                    throw new RuntimeException("You are not allowed to change de PDC");
+                    response.put("status", "400");
+                    response.put("response", "You are not allowed to change de PDC");
+                    return response.toString();
                 }    
-            }      
+            } 
+            response.put("status", "200");
+            response.put("response", metaObject.toString() + "Private Data: \n" + privateMetaObject.toString());
+            return response.toString();     
         }
         else {
-            throw new RuntimeException("The ID "+id+" does not exist");
+            response.put("status", "400");
+            response.put("response", "The object with the key " +id+ " does not exist");
+            return response.toString();
         }
     } 
     
@@ -355,10 +434,10 @@ public class NutriSafeContract implements ContractInterface {
     /* #region Accept rules */
 
     @Transaction()
-    public void addRuleNameAndCondition(Context ctx, String pdc, String product) throws UnsupportedEncodingException{
+    public String addRuleNameAndCondition(Context ctx, String pdc, String product) throws UnsupportedEncodingException{
         AcceptRule acceptRule = new AcceptRule();
         String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
-        if (privateObjectExists(ctx, acrKey, pdc)){    
+        if (privateObjectExistsIntern(ctx, acrKey, pdc)){    
             byte[] acc = ctx.getStub().getPrivateData(pdc, acrKey);
             String accString = new String(acc, "UTF-8");
             acceptRule = AcceptRule.fromJSONString(accString);     
@@ -369,37 +448,57 @@ public class NutriSafeContract implements ContractInterface {
                 acceptRule.addEntryToProductToAttributeAndRule(product, entry.getKey(), new String(entry.getValue(), "UTF-8"));
             }
             ctx.getStub().putPrivateData(pdc, acrKey, acceptRule.toJSONString().getBytes(UTF_8));
+            response.put("status", "200");
+            response.put("response",acceptRule.toString());
+            return response.toString();
             
         } 
         else {
-            throw new RuntimeException("No transient data passed");
+            response.put("status", "400");
+            response.put("response","No transient data passed");
+            return response.toString();
         }
     }
 
     //not tested
     @Transaction()
-    public void deleteRuleForProduct(Context ctx, String pdc, String product) throws UnsupportedEncodingException{
+    public String deleteRuleForProduct(Context ctx, String pdc, String product) throws UnsupportedEncodingException{
         String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
         
-        if (privateObjectExists(ctx, acrKey, pdc)){ 
+        if (privateObjectExistsIntern(ctx, acrKey, pdc)){ 
             byte[] acc = ctx.getStub().getPrivateData(pdc, acrKey);
             String accString = new String(acc, "UTF-8");
             AcceptRule acceptRule = AcceptRule.fromJSONString(accString); 
             acceptRule.deleteEntryFromProductToAttributeAndRule(product);
             ctx.getStub().putPrivateData(pdc, acrKey, acceptRule.toJSONString().getBytes(UTF_8));
+            response.put("status", "200");
+            response.put("response",acceptRule.toString());
+            return response.toString();
         }
         else {
-            throw new RuntimeException("There is no AcceptRule Object defined");
+            response.put("status", "400");
+            response.put("response", "There is no AcceptRule Object defined");
+            return response.toString();
         }
 
     }
 
     @Transaction()
-    public AcceptRule readAccept(Context ctx, String id, String pdc) throws UnsupportedEncodingException{
-        byte[] acc = ctx.getStub().getPrivateData(pdc, id + ACR_STRING);
-        String accString = new String(acc, "UTF-8");
-        AcceptRule acr = AcceptRule.fromJSONString(accString);      
-        return acr;
+    public String readAccept(Context ctx, String id, String pdc) throws UnsupportedEncodingException{
+        if (privateObjectExistsIntern(ctx, id + ACR_STRING, pdc)){ 
+            byte[] acc = ctx.getStub().getPrivateData(pdc, id + ACR_STRING);
+            String accString = new String(acc, "UTF-8");
+            AcceptRule acr = AcceptRule.fromJSONString(accString);      
+            response.put("status", "200");
+            response.put("response", acr.toString());
+            return response.toString();
+            
+        }
+        else {
+            response.put("status", "400");
+            response.put("response", "There is no AcceptRule Object defined");
+            return response.toString();
+        }
     }
 
     /* #endregion */
@@ -408,7 +507,7 @@ public class NutriSafeContract implements ContractInterface {
 
     //not tested
     @Transaction()
-    public void activateAlarm(Context ctx, String id){
+    public String activateAlarm(Context ctx, String id){
         //TODO Prüfung auf Berechtigung
         if (objectExistsIntern(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
@@ -418,15 +517,20 @@ public class NutriSafeContract implements ContractInterface {
                 MetaObject sucMetaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(suc)));
                 sucMetaObject.setAlarmFlag(true);
             }
+            response.put("status", "400");
+            response.put("response", metaObject.toString());
+            return response.toString();
         }
         else {
-            throw new RuntimeException("The ID "+id+" does not exist");
+            response.put("status", "400");
+            response.put("response", "The object with the key " +id+ " does not exist");
+            return response.toString();
         }
     }
 
     //not tested
     @Transaction()
-    public void exportDataToAuthPDC(Context ctx, String id) throws UnsupportedEncodingException{
+    public String exportDataToAuthPDC(Context ctx, String id) throws UnsupportedEncodingException{
         if (objectExistsIntern(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             HashMap<String, String> attributes = new HashMap<>();
@@ -439,13 +543,21 @@ public class NutriSafeContract implements ContractInterface {
                 }  
                 metaObject.addAllAttributes(attributes);
                 ctx.getStub().putPrivateData(AUTHORITY_PDC, id,metaObject.toJSONString().getBytes(UTF_8));
+                response.put("status", "200");
+                response.put("response", metaObject.toString());
+                return response.toString();
+                
             }
             else {
-                throw new RuntimeException("The alarm flag for " +id+  "is set to false");
+                response.put("status", "400");
+                response.put("response", "The alarm flag for " +id+  "is set to false");
+                return response.toString();
             }
         }
         else {
-            throw new RuntimeException("The ID "+id+" does not exist");
+            response.put("status", "400");
+            response.put("response", "The object with the key " +id+ " does not exist");
+            return response.toString();
         }
     }
 
