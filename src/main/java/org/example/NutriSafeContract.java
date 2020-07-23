@@ -69,12 +69,12 @@ public class NutriSafeContract implements ContractInterface {
         boolean exists = objectExistsIntern(ctx, id);
         if (!exists) {
             response.put("status", "400");
-            response.put("response", "The object with the key " +id+ "does not exist");
+            response.put("response", "The object with the key " +id+ " does not exist");
             return response.toString();
         }
         ctx.getStub().delState(id);
         response.put("status", "200");
-        response.put("response", "The object with the key " +id+ "was deleted");
+        response.put("response", "The object with the key " +id+ " was deleted");
         return response.toString();
     } 
 
