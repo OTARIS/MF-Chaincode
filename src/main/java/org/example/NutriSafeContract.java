@@ -179,22 +179,35 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public String createObject(Context ctx, String id, String pdc, String productName, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
+        //TODO Datenty check bei privaten Daten
         if (!objectExistsIntern(ctx, id)){
             MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));             
             if (metaDef.productNameExists(productName)){
                 List<String> allowedAttr = metaDef.getAttributesByProductName(productName);
                 int i = 0;
                 for(String attr : attributes){
-                    if (!allowedAttr.contains(attr)) throw new RuntimeException("The attribute " +attr+ " is not defined");
-                    if (metaDef.getDataTypeByAttribute(attr) == "Integer"){
-                        if (!attrValues[i].matches("-?\\d+")) throw new RuntimeException("The attribute " +attr+ " is not an Integer");
+                    if (!allowedAttr.contains(attr)){
+                        response.put("status", "400");
+                        response.put("response", "The attribute " +attr+ " is not defined");
+                        return response.toString();
+                    } 
+                    if (metaDef.getDataTypeByAttribute(attr).equals("Integer")){
+                        if (!attrValues[i].matches("-?\\d+")){
+                            response.put("status", "400");
+                            response.put("response", "The attribute " +attr+ " is not an Integer");
+                            return response.toString();
+                        } 
                     }
                 i++;
                 }
                 Map<String, byte[]> transientData = ctx.getStub().getTransient();
                 if (transientData.size() != 0) {
                     for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
-                        if (!allowedAttr.contains(entry.getKey())) throw new RuntimeException("The attribute " +entry.getKey()+ " is not defined");
+                        if (!allowedAttr.contains(entry.getKey())){
+                            response.put("status", "400");
+                            response.put("response", "The attribute " +entry.getKey()+ " is not defined");
+                            return response.toString();
+                        } 
                     }
                 }    
                 String timeStamp = ctx.getStub().getTxTimestamp().toString();
@@ -214,7 +227,7 @@ public class NutriSafeContract implements ContractInterface {
             }
             else{
                 response.put("status", "400");
-                response.put("response", "The product name" +productName+ " is not defined");
+                response.put("response", "The product name " +productName+ " is not defined");
                 return response.toString();
             }
         }
@@ -263,7 +276,9 @@ public class NutriSafeContract implements ContractInterface {
             }
             if (metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())){
                 if (privateObjectExistsIntern(ctx, receiver + ACR_STRING, pdcOfACRRule)){  //AcceptRule definiton must be in the same PDC as the PrivateMetaObject
-                    AcceptRule acceptRule = readAccept(ctx, receiver, metaObject.getPrivateDataCollection());
+                    byte[] acc = ctx.getStub().getPrivateData(metaObject.getPrivateDataCollection(), id + ACR_STRING);
+                    String accString = new String(acc, "UTF-8");
+                    AcceptRule acceptRule = AcceptRule.fromJSONString(accString);
                     HashMap<String, HashMap<String, String>> acceptRules = acceptRule.getProductToAttributeAndRule();
                     if (acceptRules.containsKey(metaObject.getProductName())){
                         HashMap<String, String> attributeToCondition = acceptRules.get(metaObject.getProductName());
@@ -275,15 +290,26 @@ public class NutriSafeContract implements ContractInterface {
                             condition = condition.substring(2, condition.length());                               
                             if (operator.equals("eq")){
                                 returnV += "eq";
-                                if (!attributesToCheck.get(entry.getKey()).equals(condition)) throw new RuntimeException("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " does not match the condition " + condition);                               
-                            }
+                                if (!attributesToCheck.get(entry.getKey()).equals(condition)){
+                                    response.put("status", "400");
+                                    response.put("response", "The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " does not match the condition " + condition);
+                                    return response.toString();
+                                }
                             else if (operator.equals("lt")){
                                 returnV += "lt";
-                                 if (Integer.parseInt(attributesToCheck.get(entry.getKey())) >= Integer.parseInt(condition)) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not lower than " + condition);
+                                if (Integer.parseInt(attributesToCheck.get(entry.getKey())) >= Integer.parseInt(condition)){
+                                response.put("status", "400");
+                                response.put("response", "The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not lower than " + condition);
+                                return response.toString();
+                                }
                             }
                             else if (operator.equals("gt")){
                                 returnV += "gt";
-                                  if (Integer.parseInt(attributesToCheck.get(entry.getKey())) <= Integer.parseInt(condition)) throw new RuntimeException ("The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not greater than " + condition);                                                                                   
+                                if (Integer.parseInt(attributesToCheck.get(entry.getKey())) <= Integer.parseInt(condition)){
+                                response.put("status", "400");
+                                response.put("response", "The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not greater than " + condition);
+                                return response.toString();
+                                }                                                                                    
                             }
                         }                                            
                     }                                      
@@ -343,13 +369,21 @@ public class NutriSafeContract implements ContractInterface {
                 return response.toString();
             }
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
-            if (!metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) throw new RuntimeException("You are not the owner of " +id);
+            if (!metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())){
+                response.put("status", "400");
+                response.put("response", "You are not the owner of " +id);
+                return response.toString();
+            } 
             ArrayList<MetaObject> predecessors = new ArrayList<>();
             for (String preId : predecessorIds){
                 predecessors.add(MetaObject.fromJSONString(new String(ctx.getStub().getState(preId))));
             }
             for (MetaObject preMetaObject : predecessors){
-                if (!preMetaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) throw new RuntimeException("You are not the owner of at least one predecessor");
+                if (!preMetaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())){
+                    response.put("status", "400");
+                    response.put("response", "You are not the owner of at least one predecessor");
+                    return response.toString();
+                } 
             }      
             metaObject.addPredecessor(predecessorIds);
             ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
@@ -361,7 +395,7 @@ public class NutriSafeContract implements ContractInterface {
                 i++;
             }    
             response.put("status", "200");
-            response.put("response", metaObject.toString();
+            response.put("response", metaObject.toString());
             return response.toString();   
         }
         else {

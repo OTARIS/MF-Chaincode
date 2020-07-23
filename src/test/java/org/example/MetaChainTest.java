@@ -54,9 +54,7 @@ public final class MetaChainTest {
         //byte[] privateMetaObject = ("").getBytes(StandardCharsets.UTF_8);
         //when(stub.getPrivateData(collection, "MILK1_P")).thenReturn(privateMetaObject);
         //when(stub.getPrivateDataHash(collection, "MILK1_P")).thenReturn(("privateMetaObject").getBytes(StandardCharsets.UTF_8));
-        
-        //byte[]metaDef = ("").getBytes(StandardCharsets.UTF_8);
-        //when(stub.getState("METADEF")).thenReturn(new byte[] {});
+
 
     }
 
@@ -68,15 +66,7 @@ public final class MetaChainTest {
             String json = "{\"productNameToAttributesMap\":{\"milklot\":[\"Quality\",\"AmountInLiter\"]},\"attributeToDataTypeMap\":{\"AmountInLiter\":\"Integer\",\"Quality\":\"String\"}}";
             verify(stub).putState("METADEF", json.getBytes(UTF_8));
         }
-        /*
-        @Test
-        public void readMetaDef() {           
-            MetaDef returnedMetaDef = contract.META_readMetaDef(ctx);
-            assertEquals(returnedMetaDef.getAttributeToDataTypeMap(), metaDef.getAttributeToDataTypeMap());
-            assertEquals(returnedMetaDef.getProductNameToAttributesMap(), metaDef.getProductNameToAttributesMap());
-        }
-        */
-
+        
         @Test
         public void addAttributeDefinition(){
             String json = "{\"productNameToAttributesMap\":{\"milklot\":[\"Quality\",\"AmountInLiter\"]},\"attributeToDataTypeMap\":{\"AmountInLiter\":\"Integer\",\"Quality\":\"String\",\"Color\":\"String\"}}";
@@ -95,10 +85,9 @@ public final class MetaChainTest {
         @Test
         public void addProductDefinitionWithWrongAttribute(){
             String[] attributes = {"Color", "AmountInLiter"};
-            Exception thrown = assertThrows(RuntimeException.class, () -> {
-                contract.META_addProductDefinition(ctx, "ham", attributes);
-            });
-            assertEquals(thrown.getMessage(), "The attribute Color is not defined");
+            String result = contract.META_addProductDefinition(ctx, "ham", attributes);
+            String json = "{\"response\":\"The attribute Color is not defined\",\"status\":\"400\"}";
+            assertEquals(json, result);
         }        
     }
     
@@ -109,12 +98,51 @@ public final class MetaChainTest {
         public void createObjectPublic() throws Exception {
             String[] attributes = {"Quality", "AmountInLiter"};
             String[] attrValues = {"good", "10"};
-            contract.createObject(ctx, "MILK1", "CollectionOne", "milklot", attributes, attrValues);
-            MetaObject mo = new MetaObject("CollectionOne", "milklot", attributes, attrValues, "2020-01-01T01:01:01Z", "Org1MSP");
-            System.out.println(mo.toJSONString());
-            String json = "{\"alarmFlag\":false,\"productName\":\"milklot\",\"receiver\":\"\",\"privateDataCollection\":\"CollectionOne\",\"predecessor\":[],\"successor\":[],\"actualOwner\":\"Org1MSP\",\"tsAndOwner\":{\"2020-01-01T01:01:01Z\":\"Org1MSP\"},\"attributes\":{\"Quality\":\"good\",\"AmountInLiter\":\"10\"}}";
-            verify(stub).putState("MILK1", json.getBytes(UTF_8));
+            String result = contract.createObject(ctx, "MILK1", "CollectionOne", "milklot", attributes, attrValues);
+            assertTrue(result.contains("200"));
         }
+
+        @Test
+        public void createObjectWithUndefinedProduct() throws Exception {
+            String[] attributes = {"Quality", "AmountInLiter"};
+            String[] attrValues = {"good", "10"};
+            String result = contract.createObject(ctx, "MILK1", "CollectionOne", "ham", attributes, attrValues);
+            String json = "{\"response\":\"The product name ham is not defined\",\"status\":\"400\"}";
+            assertEquals(json, result);
+        }
+        
+        @Test
+        public void createObjectWithUndefinedAttribute() throws Exception {
+            String[] attributes = {"Color", "AmountInLiter"};
+            String[] attrValues = {"good", "10"};
+            String result = contract.createObject(ctx, "MILK1", "CollectionOne", "milklot", attributes, attrValues);
+            String json = "{\"response\":\"The attribute Color is not defined\",\"status\":\"400\"}";
+            assertEquals(json, result);
+        }
+
+        @Test
+        public void createObjectWithStringAsIntegerAttribute() throws Exception {
+            String[] attributes = {"Quality", "AmountInLiter"};
+            String[] attrValues = {"good", "knlknkl"};
+            String result = contract.createObject(ctx, "MILK1", "CollectionOne", "milklot", attributes, attrValues);
+            String json = "{\"response\":\"The attribute AmountInLiter is not an Integer\",\"status\":\"400\"}";
+            assertEquals(json, result);
+        }
+
+        @Test
+        public void createObjectWithUndefinedPrivateAttribute() throws Exception {
+            Map<String, byte[]> transientMap = new HashMap<>();
+            transientMap.put("Color", "150".getBytes(StandardCharsets.UTF_8));
+            when(stub.getTransient()).thenReturn(transientMap);
+
+
+            String[] attributes = {"Quality"};
+            String[] attrValues = {"good"};
+            String result = contract.createObject(ctx, "MILK1", "CollectionOne", "milklot", attributes, attrValues);
+            String json = "{\"response\":\"The attribute Color is not defined\",\"status\":\"400\"}";
+            assertEquals(json, result);
+        }
+
     }
 
 }
