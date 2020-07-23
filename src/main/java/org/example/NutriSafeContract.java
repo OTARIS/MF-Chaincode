@@ -8,6 +8,7 @@ import org.hyperledger.fabric.contract.ContractInterface;
 import org.hyperledger.fabric.contract.annotation.Contract;
 import org.hyperledger.fabric.contract.annotation.Default;
 import org.hyperledger.fabric.contract.annotation.Transaction;
+import org.json.JSONObject;
 import org.hyperledger.fabric.contract.annotation.Contact;
 import org.hyperledger.fabric.contract.annotation.Info;
 import org.hyperledger.fabric.contract.annotation.License;
@@ -34,15 +35,28 @@ public class NutriSafeContract implements ContractInterface {
     private String PDC_STRING = "_P";
     private String ACR_STRING = "_ACR";
     private String AUTHORITY_PDC = "AUTH_PDC";
+    
 
     public  NutriSafeContract() {}
 
     /* #region utils */
 
-    @Transaction()
-    public boolean objectExists(Context ctx, String id){
+    
+    boolean objectExistsIntern(Context ctx, String id){
         byte[] buffer = ctx.getStub().getState(id);
         return (buffer != null && buffer.length > 0);
+    }
+
+    @Transaction
+    public String objectExists(Context ctx, String id){  
+        JSONObject response = new JSONObject();     
+        response.put("status", "200");
+        byte[] buffer = ctx.getStub().getState(id);
+        if (buffer != null && buffer.length > 0){
+            response.put("response", (buffer != null && buffer.length > 0));
+        }
+        return response.toString;
+
     }
 
     @Transaction()
@@ -53,7 +67,7 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public void deleteObject(Context ctx, String id){
-        boolean exists = objectExists(ctx, id);
+        boolean exists = objectExistsIntern(ctx, id);
         if (!exists) {
             throw new RuntimeException("The object does not exist");
         }
@@ -83,7 +97,7 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public MetaDef META_readMetaDef(Context ctx){
-        if (objectExists(ctx, META_DEF_ID)){
+        if (objectExistsIntern(ctx, META_DEF_ID)){
             MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
             return metaDef;
         }
@@ -94,7 +108,7 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public void META_addAttributeDefinition(Context ctx, String attribute, String dataType){
-        if (objectExists(ctx, META_DEF_ID)){
+        if (objectExistsIntern(ctx, META_DEF_ID)){
             MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
             metaDef.addAttributeDefinition(attribute, dataType);
             ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));         
@@ -103,7 +117,7 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public void META_addProductDefinition(Context ctx, String productName, String[] attributes){
-        if (objectExists(ctx, META_DEF_ID)){
+        if (objectExistsIntern(ctx, META_DEF_ID)){
             MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));           
             ArrayList<String> attributesArray = new ArrayList<>();
             HashMap<String, String> allowedAttributes = metaDef.getAttributeToDataTypeMap();
@@ -112,8 +126,7 @@ public class NutriSafeContract implements ContractInterface {
                     attributesArray.add(attributes[i]);
                 }
                 else {
-                    throw new RuntimeException("The attribute " +attributes[i] + " is not defined");
-                    
+                    throw new RuntimeException("The attribute " +attributes[i] + " is not defined");                  
                 }
             }
             metaDef.addProductDefinition(productName, attributesArray);
@@ -127,7 +140,7 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public void createObject(Context ctx, String id, String pdc, String productName, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
-        if (!objectExists(ctx, id)){
+        if (!objectExistsIntern(ctx, id)){
             MetaDef metaDef = META_readMetaDef(ctx);           
             if (metaDef.productNameExists(productName)){
                 List<String> allowedAttr = metaDef.getAttributesByProductName(productName);
@@ -169,7 +182,7 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public String readObject(Context ctx, String id){
-        if (objectExists(ctx, id)){
+        if (objectExistsIntern(ctx, id)){
             String pmoString = "";
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             if (!metaObject.getPrivateDataCollection().equals("")){
@@ -191,7 +204,7 @@ public class NutriSafeContract implements ContractInterface {
     public String setReceiver(Context ctx, String id, String receiver, String pdcOfACRRule) throws UnsupportedEncodingException{
         HashMap<String, String> attributesToCheck = new HashMap<>();
         String returnV = "";
-        if (objectExists(ctx, id)){
+        if (objectExistsIntern(ctx, id)){
             
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             if (metaObject.getPrivateDataCollection().length() >= 3){
@@ -242,7 +255,7 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public void changeOwner(Context ctx, String id){
-        if (objectExists(ctx, id)){
+        if (objectExistsIntern(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             if (metaObject.getReceiver().equals(ctx.getClientIdentity().getMSPID())){
                 metaObject.setReceiver("");
@@ -261,9 +274,9 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public void addPredecessor(Context ctx, String[] predecessorIds, String id){
-        if (objectExists(ctx, id)){
+        if (objectExistsIntern(ctx, id)){
             for (String preId : predecessorIds){
-                if (!objectExists(ctx, preId)) throw new RuntimeException("The ID "+preId+" does not exist");
+                if (!objectExistsIntern(ctx, preId)) throw new RuntimeException("The ID "+preId+" does not exist");
             }
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             if (!metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) throw new RuntimeException("You are not the owner of " +id);
@@ -291,7 +304,7 @@ public class NutriSafeContract implements ContractInterface {
     public void updateAttribute(Context ctx, String id, String attrName, String attrValue){
         //TODO update private data
         //TODO Datetyp prüfen
-        if (objectExists(ctx, id)){
+        if (objectExistsIntern(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             MetaDef metaDef = META_readMetaDef(ctx);
             List<String> allowedAttr = metaDef.getAttributesByProductName(metaObject.getProductName());
@@ -392,8 +405,7 @@ public class NutriSafeContract implements ContractInterface {
     @Transaction()
     public void activateAlarm(Context ctx, String id){
         //TODO Prüfung auf Berechtigung
-
-        if (objectExists(ctx, id)){
+        if (objectExistsIntern(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             metaObject.setAlarmFlag(true);
             ArrayList<String> successors = metaObject.getSuccessor();
@@ -410,7 +422,7 @@ public class NutriSafeContract implements ContractInterface {
     //not tested
     @Transaction()
     public void exportDataToAuthPDC(Context ctx, String id) throws UnsupportedEncodingException{
-        if (objectExists(ctx, id)){
+        if (objectExistsIntern(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             HashMap<String, String> attributes = new HashMap<>();
             if (metaObject.getAlarmFlag() == true){
