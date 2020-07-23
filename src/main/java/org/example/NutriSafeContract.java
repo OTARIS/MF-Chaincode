@@ -36,6 +36,7 @@ public class NutriSafeContract implements ContractInterface {
     private String ACR_STRING = "_ACR";
     private String AUTHORITY_PDC = "AUTH_PDC";
     
+    JSONObject response = new JSONObject(); 
 
     public  NutriSafeContract() {}
 
@@ -48,30 +49,33 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction
-    public String objectExists(Context ctx, String id){  
-        JSONObject response = new JSONObject();     
+    public String objectExists(Context ctx, String id){            
         response.put("status", "200");
         byte[] buffer = ctx.getStub().getState(id);
-        if (buffer != null && buffer.length > 0){
-            response.put("response", (buffer != null && buffer.length > 0));
-        }
-        return response.toString;
+        response.put("response", (buffer != null && buffer.length > 0));
+        return response.toString();
 
     }
 
     @Transaction()
     public boolean privateObjectExists(Context ctx, String id, String pdc) {
         byte[] buffer = ctx.getStub().getPrivateDataHash(pdc, id);
+        
         return (buffer != null && buffer.length > 0);
     }
 
     @Transaction()
-    public void deleteObject(Context ctx, String id){
+    public String deleteObject(Context ctx, String id){
         boolean exists = objectExistsIntern(ctx, id);
         if (!exists) {
-            throw new RuntimeException("The object does not exist");
+            response.put("status", "400");
+            response.put("response", "The object with the key " +id+ "does not exist");
+            return response.toString();
         }
         ctx.getStub().delState(id);
+        response.put("status", "200");
+        response.put("response", "The object with the key " +id+ "was deleted");
+        return response.toString();
     } 
 
     @Transaction()
@@ -90,6 +94,7 @@ public class NutriSafeContract implements ContractInterface {
     @Transaction()
     public String META_createSampleData(Context ctx){
         MetaDef metaDef = new MetaDef();
+        
         metaDef.createSampleData();
         ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8)); 
         return metaDef.toString();    
