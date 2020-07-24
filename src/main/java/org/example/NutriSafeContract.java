@@ -52,7 +52,8 @@ public class NutriSafeContract implements ContractInterface {
     public String objectExists(Context ctx, String id){            
         response.put("status", "200");
         byte[] buffer = ctx.getStub().getState(id);
-        response.put("response", (buffer != null && buffer.length > 0));
+        if (buffer != null && buffer.length > 0) response.put("response", "true");
+        else response.put("response", "false");
         return response.toString();
 
     }
@@ -67,7 +68,8 @@ public class NutriSafeContract implements ContractInterface {
     public String privateObjectExists(Context ctx, String id, String pdc) {
         response.put("status", "200");
         byte[] buffer = ctx.getStub().getPrivateDataHash(pdc, id);       
-        response.put("response", (buffer != null && buffer.length > 0));
+        if (buffer != null && buffer.length > 0) response.put("response", "true");
+        else response.put("response", "false");
         return response.toString();
     }
 
@@ -108,7 +110,7 @@ public class NutriSafeContract implements ContractInterface {
         metaDef.createSampleData();
         ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8)); 
         response.put("status", "200");
-        response.put("reponse", metaDef.toString());
+        response.put("response", metaDef.toString());
         return response.toString();   
     }
 
@@ -117,7 +119,7 @@ public class NutriSafeContract implements ContractInterface {
         if (objectExistsIntern(ctx, META_DEF_ID)){
             MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));
             response.put("status", "200");
-            response.put("reponse", metaDef.toString());
+            response.put("response", metaDef.toString());
             return response.toString();
         }
         else {
@@ -134,7 +136,7 @@ public class NutriSafeContract implements ContractInterface {
             metaDef.addAttributeDefinition(attribute, dataType);
             ctx.getStub().putState(META_DEF_ID, metaDef.toJSONString().getBytes(UTF_8));  
             response.put("status", "200");
-            response.put("reponse", metaDef.toString());
+            response.put("response", metaDef.toString());
             return response.toString(); 
         }
         else {
@@ -547,7 +549,6 @@ public class NutriSafeContract implements ContractInterface {
     
     /* #region alarm handling */
 
-    //not tested
     @Transaction()
     public String activateAlarm(Context ctx, String id){
         //TODO Prüfung auf Berechtigung

@@ -151,6 +151,8 @@ public class MetaObject {
 
     @Override
     public String toString(){
+        return toJSONString();
+        /*
         StringBuilder sb = new StringBuilder();
         sb.append("\n");
         sb.append("Name: " + productName + "\n");
@@ -163,6 +165,7 @@ public class MetaObject {
         sb.append("Predecessor: " + predecessor.toString() + "\n");
         sb.append("Successor: " + successor.toString() + "\n");       
         return sb.toString();
+        */
     }
 
     public String toJSONString() {      

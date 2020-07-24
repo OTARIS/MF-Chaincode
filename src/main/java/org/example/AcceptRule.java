@@ -53,7 +53,8 @@ public class AcceptRule {
 
     @Override
     public String toString(){
-        return "ProductToRule: " + productToAttributeAndRule;
+        return toJSONString();
+        //return "ProductToRule: " + productToAttributeAndRule;
     }
 
     public String toJSONString() {      

@@ -78,10 +78,13 @@ public class MetaDef {
 
     @Override
     public String toString(){
+        return toJSONString();
+        /*
         StringBuilder sb = new StringBuilder();
         sb.append("Product name to attributes:" + productNameToAttributesMap.toString() + "\n");
         sb.append("Attributes to data type:" + attributeToDataTypeMap.toString());
         return sb.toString();
+        */
     }
 
     public String toJSONString() {
