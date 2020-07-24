@@ -1,0 +1,10 @@
+[
+     {
+          "name": "CollectionOne",
+          "policy": "OR('DeoniMSP.member', 'TuxerMSP.member')",
+          "requiredPeerCount": 1,
+          "maxPeerCount": 1,
+          "blockToLive": 0,
+          "memberOnlyRead": false
+     }
+]
