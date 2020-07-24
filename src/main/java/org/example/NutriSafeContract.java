@@ -179,7 +179,6 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public String createObject(Context ctx, String id, String pdc, String productName, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
-        //TODO Datenty check bei privaten Daten
         if (!objectExistsIntern(ctx, id)){
             MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));             
             if (metaDef.productNameExists(productName)){
@@ -200,6 +199,7 @@ public class NutriSafeContract implements ContractInterface {
                     }
                 i++;
                 }
+                i = 0;
                 Map<String, byte[]> transientData = ctx.getStub().getTransient();
                 if (transientData.size() != 0) {
                     for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
@@ -208,6 +208,14 @@ public class NutriSafeContract implements ContractInterface {
                             response.put("response", "The attribute " +entry.getKey()+ " is not defined");
                             return response.toString();
                         } 
+                        if (metaDef.getDataTypeByAttribute(entry.getKey()).equals("Integer")){
+                            if (!attrValues[i].matches("-?\\d+")){
+                                response.put("status", "400");
+                                response.put("response", "The attribute " +entry.getKey()+ " is not an Integer");
+                                return response.toString();
+                            } 
+                        }
+                        i++;
                     }
                 }    
                 String timeStamp = ctx.getStub().getTxTimestamp().toString();
@@ -495,7 +503,6 @@ public class NutriSafeContract implements ContractInterface {
         }
     }
 
-    //not tested
     @Transaction()
     public String deleteRuleForProduct(Context ctx, String pdc, String product) throws UnsupportedEncodingException{
         String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
@@ -507,7 +514,7 @@ public class NutriSafeContract implements ContractInterface {
             acceptRule.deleteEntryFromProductToAttributeAndRule(product);
             ctx.getStub().putPrivateData(pdc, acrKey, acceptRule.toJSONString().getBytes(UTF_8));
             response.put("status", "200");
-            response.put("response",acceptRule.toString());
+            response.put("response", acceptRule.toString());
             return response.toString();
         }
         else {
@@ -547,12 +554,14 @@ public class NutriSafeContract implements ContractInterface {
         if (objectExistsIntern(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             metaObject.setAlarmFlag(true);
+            ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
             ArrayList<String> successors = metaObject.getSuccessor();
             for (String suc : successors){
                 MetaObject sucMetaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(suc)));
                 sucMetaObject.setAlarmFlag(true);
+                ctx.getStub().putState(suc, sucMetaObject.toJSONString().getBytes(UTF_8));
             }
-            response.put("status", "400");
+            response.put("status", "200");
             response.put("response", metaObject.toString());
             return response.toString();
         }

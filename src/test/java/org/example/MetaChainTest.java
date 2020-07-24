@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,10 +52,6 @@ public final class MetaChainTest {
         when(ctx.getClientIdentity().getMSPID()).thenReturn("Org1MSP");
         
 
-        //byte[] privateMetaObject = ("").getBytes(StandardCharsets.UTF_8);
-        //when(stub.getPrivateData(collection, "MILK1_P")).thenReturn(privateMetaObject);
-        //when(stub.getPrivateDataHash(collection, "MILK1_P")).thenReturn(("privateMetaObject").getBytes(StandardCharsets.UTF_8));
-
 
     }
 
@@ -92,7 +89,7 @@ public final class MetaChainTest {
     }
     
     @Nested
-    class MetaObjectTests {
+    class CreateObjectTests {
 
         @Test
         public void createObjectPublic() throws Exception {
@@ -141,6 +138,68 @@ public final class MetaChainTest {
             assertEquals(json, result);
         }
 
+        @Test
+        public void createObjectWithStringAsIntegerAttributePrivate() throws Exception {
+            Map<String, byte[]> transientMap = new HashMap<>();
+            transientMap.put("AmountInLiter", "150L".getBytes(StandardCharsets.UTF_8));
+            when(stub.getTransient()).thenReturn(transientMap);
+            String[] attributes = {"Quality"};
+            String[] attrValues = {"good"};
+            String result = contract.createObject(ctx, "MILK1", "CollectionOne", "milklot", attributes, attrValues);
+            String json = "{\"response\":\"The attribute AmountInLiter is not an Integer\",\"status\":\"400\"}";
+            assertEquals(json, result);
+        }
+
+    }
+
+    @Nested
+    class AcceptRuleTests {
+
+        @Test
+        public void addRuleNameAndConditionNew() throws Exception {
+            Map<String, byte[]> transientMap = new HashMap<>();
+            transientMap.put("Quality", "eqBio".getBytes(StandardCharsets.UTF_8));
+            when(stub.getTransient()).thenReturn(transientMap);
+            String response = contract.addRuleNameAndCondition(ctx, "CollectionOne", "milklot");
+            assertTrue(response.contains("200"));
+        }
+
+        @Test
+        public void addRuleNameAndConditionExist() throws Exception {
+            AcceptRule acr = new AcceptRule();
+            acr.addEntryToProductToAttributeAndRule("ham", "Quality", "eqBio");
+            byte[] acrBytes = acr.toJSONString().getBytes(StandardCharsets.UTF_8);
+            when(stub.getPrivateData(collection, "Org1MSP_ACR")).thenReturn(acrBytes);
+            when(stub.getPrivateDataHash(collection, "Org1MSP_ACR")).thenReturn(("privateMetaObject").getBytes(StandardCharsets.UTF_8));
+            Map<String, byte[]> transientMap = new HashMap<>();
+            transientMap.put("Quality", "eqBio".getBytes(StandardCharsets.UTF_8));
+            when(stub.getTransient()).thenReturn(transientMap);
+            String response = contract.addRuleNameAndCondition(ctx, "CollectionOne", "milklot");
+            assertTrue(response.contains("200"));
+            assertTrue(response.contains("ham"));
+        }
+
+        @Test
+        public void deleteRuleForProduct() throws Exception {
+            AcceptRule acr = new AcceptRule();
+            acr.addEntryToProductToAttributeAndRule("milklot", "Quality", "eqBio");
+            acr.addEntryToProductToAttributeAndRule("ham", "AmountInLiter", "eq10");
+            byte[] acrBytes = acr.toJSONString().getBytes(StandardCharsets.UTF_8);
+            when(stub.getPrivateData(collection, "Org1MSP_ACR")).thenReturn(acrBytes);
+            when(stub.getPrivateDataHash(collection, "Org1MSP_ACR")).thenReturn(("privateMetaObject").getBytes(StandardCharsets.UTF_8));
+            String response = contract.deleteRuleForProduct(ctx, "CollectionOne", "milklot");
+            assertTrue(response.contains("ham"));
+            assertFalse(response.contains("milklot"));
+        }
+    }
+
+    @Nested
+    class setReceiverTests {
+
+        @Test
+        public void setReceiver() throws Exception {
+
+        }
     }
 
 }
