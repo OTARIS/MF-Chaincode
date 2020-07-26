@@ -8,6 +8,9 @@ import org.hyperledger.fabric.contract.ContractInterface;
 import org.hyperledger.fabric.contract.annotation.Contract;
 import org.hyperledger.fabric.contract.annotation.Default;
 import org.hyperledger.fabric.contract.annotation.Transaction;
+import org.hyperledger.fabric.shim.ledger.KeyValue;
+import org.hyperledger.fabric.shim.ledger.QueryResultsIterator;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.hyperledger.fabric.contract.annotation.Contact;
 import org.hyperledger.fabric.contract.annotation.Info;
@@ -16,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +46,20 @@ public class NutriSafeContract implements ContractInterface {
 
     /* #region utils */
 
-    
+    @Transaction
+    public String queryChaincodeByQueryString(Context ctx, String queryString) throws Exception{
+        QueryResultsIterator<KeyValue> result = ctx.getStub().getQueryResult(queryString);
+        //"{\"selector\":{\"actualOwner\":\"Org1MSP\"}}"
+        Iterator<KeyValue> it = result.iterator();
+        JSONArray jsonArray = new JSONArray();
+        while (it.hasNext()){
+            jsonArray.put(it.next().getKey());
+        }
+        response.put("status", "200");
+        response.put("response", jsonArray);
+        return response.toString();           
+    }
+   
     boolean objectExistsIntern(Context ctx, String id){
         byte[] buffer = ctx.getStub().getState(id);
         return (buffer != null && buffer.length > 0);
