@@ -1,7 +1,7 @@
 [
      {
           "name": "FarmCollection",
-          "policy": "OR('BrangusMSP.member', 'PinzgauerMSP.member', , 'DeoniMSP.member')",
+          "policy": "OR('BrangusMSP.member', 'PinzgauerMSP.member', 'DeoniMSP.member')",
           "requiredPeerCount": 1,
           "maxPeerCount": 1,
           "blockToLive": 0,
@@ -9,7 +9,7 @@
      },
      {
           "name": "SalersCollection",
-          "policy": "OR('DeoniMSP.member', 'TuxerMSP.member', , 'SalersMSP.member')",
+          "policy": "OR('DeoniMSP.member', 'TuxerMSP.member', 'SalersMSP.member')",
           "requiredPeerCount": 1,
           "maxPeerCount": 1,
           "blockToLive": 0,
