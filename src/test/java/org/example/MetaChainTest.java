@@ -307,4 +307,19 @@ public final class MetaChainTest {
         }
     }
 
+    @Nested
+    class updateAttributesTests {
+
+        @Test
+        public void updatePublicAttribute() throws Exception {
+            String[] attrNames = {"AmountInLiter"};
+            String[] attrValues = {"10"};
+            MetaObject milk1 = new MetaObject("", "milklot", attrNames, attrValues, "01.01.01", "Org1MSP");
+            when(stub.getState("MILK1")).thenReturn(milk1.toJSONString().getBytes(StandardCharsets.UTF_8));
+            String result = contract.updateAttribute(ctx, "MILK1", "AmountInLiter", "50L");
+            assertEquals("kkk", result);
+            assertTrue(result.contains("200"));
+            assertTrue(result.contains("50"));
+        }
+    }
 }

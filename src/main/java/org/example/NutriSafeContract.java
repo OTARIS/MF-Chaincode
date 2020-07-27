@@ -38,7 +38,7 @@ public class NutriSafeContract implements ContractInterface {
     private String META_DEF_ID = "METADEF";
     private String PDC_STRING = "_P";
     private String ACR_STRING = "_ACR";
-    private String AUTHORITY_PDC = "AuthCollection";
+    private String AUTHORITY_PDC = "CollectionTwo";
     
     JSONObject response = new JSONObject(); 
 
@@ -228,7 +228,8 @@ public class NutriSafeContract implements ContractInterface {
                             return response.toString();
                         } 
                         if (metaDef.getDataTypeByAttribute(entry.getKey()).equals("Integer")){
-                            if (!attrValues[i].matches("-?\\d+")){
+                            String value = new String(entry.getValue(), "UTF-8");
+                            if (!value.matches("-?\\d+")){
                                 response.put("status", "400");
                                 response.put("response", "The attribute " +entry.getKey()+ " is not an Integer");
                                 return response.toString();
@@ -433,14 +434,20 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public String updateAttribute(Context ctx, String id, String attrName, String attrValue){
-        //TODO Datetyp prüfen
+    public String updateAttribute(Context ctx, String id, String attrName, String attrValue) throws UnsupportedEncodingException{
         if (objectExistsIntern(ctx, id)){
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
             MetaDef metaDef = MetaDef.fromJSONString(new String(ctx.getStub().getState(META_DEF_ID)));   
             List<String> allowedAttr = metaDef.getAttributesByProductName(metaObject.getProductName());
             if (attrName != ""){
                 if (allowedAttr.contains(attrName)){
+                    if (metaDef.getDataTypeByAttribute(attrName).equals("Integer")){
+                        if (!attrValue.matches("-?\\d+")){
+                            response.put("status", "400");
+                            response.put("response", "The attribute " +attrName+ " is not an Integer");
+                            return response.toString();
+                        } 
+                    }
                     metaObject.addAttribute(attrName, attrValue);
                     ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
                 }
@@ -458,6 +465,14 @@ public class NutriSafeContract implements ContractInterface {
                         response.put("status", "400");
                         response.put("response", "The attrName "+entry.getKey()+  " is not defined");
                         return response.toString();
+                    }
+                    if (metaDef.getDataTypeByAttribute(entry.getKey()).equals("Integer")){
+                        String value = new String(entry.getValue(), "UTF-8");
+                        if (!value.matches("-?\\d+")){
+                            response.put("status", "400");
+                            response.put("response", "The attribute " +entry.getKey()+ " is not an Integer");
+                            return response.toString();
+                        } 
                     }
                 }
             }
