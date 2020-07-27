@@ -603,6 +603,7 @@ public class NutriSafeContract implements ContractInterface {
                     attributes.putAll(privateMetaObject.getAttributes());
                 }  
                 metaObject.addAllAttributes(attributes);
+                metaObject.setPrivateDataCollection("");
                 ctx.getStub().putPrivateData(AUTHORITY_PDC, id,metaObject.toJSONString().getBytes(UTF_8));
                 response.put("status", "200");
                 response.put("response", metaObject.toString());
