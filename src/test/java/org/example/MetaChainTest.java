@@ -197,8 +197,113 @@ public final class MetaChainTest {
     class setReceiverTests {
 
         @Test
-        public void setReceiver() throws Exception {
+        public void setReceiverWithoutACR() throws Exception {
+            String[] attrNames = {"Quality"};
+            String[] attrValues = {"good"};
+            MetaObject milk1 = new MetaObject("", "milklot", attrNames, attrValues, "01.01.01", "Org1MSP");
+            when(stub.getState("MILK1")).thenReturn(milk1.toJSONString().getBytes(StandardCharsets.UTF_8));
+            String result = contract.setReceiver(ctx, "MILK1", "Org2MSP", "CollectionOne");
+            assertTrue(result.contains("200"));
+            assertTrue(result.contains("Org2MSP"));
+        }
 
+        @Test
+        public void setReceiverWithWrongOwner() throws Exception {
+            String[] attrNames = {"Quality"};
+            String[] attrValues = {"good"};
+            MetaObject milk1 = new MetaObject("", "milklot", attrNames, attrValues, "01.01.01", "Org2MSP");
+            when(stub.getState("MILK1")).thenReturn(milk1.toJSONString().getBytes(StandardCharsets.UTF_8));
+            String result = contract.setReceiver(ctx, "MILK1", "Org2MSP", "CollectionOne");
+            String json = "{\"response\":\"You (Org1MSP) are not the actual owner\",\"status\":\"400\"}";
+            assertEquals(json, result);
+        }
+
+        @Test
+        public void setReceiverWithACR() throws Exception {
+            String[] attrNames = {"Quality"};
+            String[] attrValues = {"Bio"};
+            MetaObject milk1 = new MetaObject("", "milklot", attrNames, attrValues, "01.01.01", "Org1MSP");
+            when(stub.getState("MILK1")).thenReturn(milk1.toJSONString().getBytes(StandardCharsets.UTF_8));
+            AcceptRule acr = new AcceptRule();
+            acr.addEntryToProductToAttributeAndRule("milklot", "Quality", "eqBio");
+            acr.addEntryToProductToAttributeAndRule("ham", "AmountInLiter", "eq10");
+            byte[] acrBytes = acr.toJSONString().getBytes(StandardCharsets.UTF_8);
+            when(stub.getPrivateData(collection, "Org2MSP_ACR")).thenReturn(acrBytes);
+            when(stub.getPrivateDataHash(collection, "Org2MSP_ACR")).thenReturn(("privateMetaObject").getBytes(StandardCharsets.UTF_8));
+            String result = contract.setReceiver(ctx, "MILK1", "Org2MSP", collection);
+            assertTrue(result.contains("200"));
+            assertTrue(result.contains("Org2MSP"));
+        }
+
+        @Test
+        public void setReceiverWithACRAndPrivateAttributes() throws Exception {
+            String[] attrNames = {"Quality"};
+            String[] attrValues = {"Bio"};
+            MetaObject milk1 = new MetaObject(collection, "milklot", attrNames, attrValues, "01.01.01", "Org1MSP");
+            when(stub.getState("MILK1")).thenReturn(milk1.toJSONString().getBytes(StandardCharsets.UTF_8));
+            
+            PrivateMetaObject pmo = new PrivateMetaObject();
+            pmo.addAttribute("AmountInLiter", "10");
+            byte[] pmoBytes = pmo.toJSONString().getBytes(StandardCharsets.UTF_8);
+            when(stub.getPrivateData(collection, "MILK1_P")).thenReturn(pmoBytes);
+            
+            AcceptRule acr = new AcceptRule();
+            acr.addEntryToProductToAttributeAndRule("milklot", "Quality", "eqBio");
+            acr.addEntryToProductToAttributeAndRule("milklot", "AmountInLiter", "gt9");
+            byte[] acrBytes = acr.toJSONString().getBytes(StandardCharsets.UTF_8);
+            when(stub.getPrivateData(collection, "Org2MSP_ACR")).thenReturn(acrBytes);
+            when(stub.getPrivateDataHash(collection, "Org2MSP_ACR")).thenReturn(("privateMetaObject").getBytes(StandardCharsets.UTF_8));
+            String result = contract.setReceiver(ctx, "MILK1", "Org2MSP", collection);
+            assertTrue(result.contains("200"));
+            assertTrue(result.contains("Org2MSP"));
+        }
+
+        @Test
+        public void setReceiverWithWrongEqCondition() throws Exception {
+            String[] attrNames = {"Quality"};
+            String[] attrValues = {"good"};
+            MetaObject milk1 = new MetaObject("", "milklot", attrNames, attrValues, "01.01.01", "Org1MSP");
+            when(stub.getState("MILK1")).thenReturn(milk1.toJSONString().getBytes(StandardCharsets.UTF_8));
+            AcceptRule acr = new AcceptRule();
+            acr.addEntryToProductToAttributeAndRule("milklot", "Quality", "eqBio");
+            byte[] acrBytes = acr.toJSONString().getBytes(StandardCharsets.UTF_8);
+            when(stub.getPrivateData(collection, "Org2MSP_ACR")).thenReturn(acrBytes);
+            when(stub.getPrivateDataHash(collection, "Org2MSP_ACR")).thenReturn(("privateMetaObject").getBytes(StandardCharsets.UTF_8));
+            String result = contract.setReceiver(ctx, "MILK1", "Org2MSP", collection);
+            String json = "{\"response\":\"The attribute Quality with the value good does not match the condition Bio\",\"status\":\"400\"}";
+            assertEquals(json, result);
+        }
+
+        @Test
+        public void setReceiverWithWrongLtCondition() throws Exception {
+            String[] attrNames = {"AmountInLiter"};
+            String[] attrValues = {"10"};
+            MetaObject milk1 = new MetaObject("", "milklot", attrNames, attrValues, "01.01.01", "Org1MSP");
+            when(stub.getState("MILK1")).thenReturn(milk1.toJSONString().getBytes(StandardCharsets.UTF_8));
+            AcceptRule acr = new AcceptRule();
+            acr.addEntryToProductToAttributeAndRule("milklot", "AmountInLiter", "lt5");
+            byte[] acrBytes = acr.toJSONString().getBytes(StandardCharsets.UTF_8);
+            when(stub.getPrivateData(collection, "Org2MSP_ACR")).thenReturn(acrBytes);
+            when(stub.getPrivateDataHash(collection, "Org2MSP_ACR")).thenReturn(("privateMetaObject").getBytes(StandardCharsets.UTF_8));
+            String result = contract.setReceiver(ctx, "MILK1", "Org2MSP", collection);
+            String json = "{\"response\":\"The attribute AmountInLiter with the value 10 is not lower than 5\",\"status\":\"400\"}";
+            assertEquals(json, result);
+        }
+
+        @Test
+        public void setReceiverWithWrongGtCondition() throws Exception {
+            String[] attrNames = {"AmountInLiter"};
+            String[] attrValues = {"10"};
+            MetaObject milk1 = new MetaObject("", "milklot", attrNames, attrValues, "01.01.01", "Org1MSP");
+            when(stub.getState("MILK1")).thenReturn(milk1.toJSONString().getBytes(StandardCharsets.UTF_8));
+            AcceptRule acr = new AcceptRule();
+            acr.addEntryToProductToAttributeAndRule("milklot", "AmountInLiter", "gt15");
+            byte[] acrBytes = acr.toJSONString().getBytes(StandardCharsets.UTF_8);
+            when(stub.getPrivateData(collection, "Org2MSP_ACR")).thenReturn(acrBytes);
+            when(stub.getPrivateDataHash(collection, "Org2MSP_ACR")).thenReturn(("privateMetaObject").getBytes(StandardCharsets.UTF_8));
+            String result = contract.setReceiver(ctx, "MILK1", "Org2MSP", collection);
+            String json = "{\"response\":\"The attribute AmountInLiter with the value 10 is not greater than 15\",\"status\":\"400\"}";
+            assertEquals(json, result);
         }
     }
 

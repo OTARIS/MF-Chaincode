@@ -291,19 +291,21 @@ public class NutriSafeContract implements ContractInterface {
     @Transaction()
     public String setReceiver(Context ctx, String id, String receiver, String pdcOfACRRule) throws UnsupportedEncodingException{
         HashMap<String, String> attributesToCheck = new HashMap<>();
-        String returnV = "";
         if (objectExistsIntern(ctx, id)){
             
             MetaObject metaObject = MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
+            //loading private attributes, if available
             if (metaObject.getPrivateDataCollection().length() >= 3){
                 byte[] pmoArray = ctx.getStub().getPrivateData(metaObject.getPrivateDataCollection(), id + PDC_STRING);
                 String pmoString = new String(pmoArray, "UTF-8");  
                 PrivateMetaObject privateMetaObject = PrivateMetaObject.fromJSONString(pmoString);
                 attributesToCheck.putAll(privateMetaObject.getAttributes());
             }
+            
             if (metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())){
-                if (privateObjectExistsIntern(ctx, receiver + ACR_STRING, pdcOfACRRule)){  //AcceptRule definiton must be in the same PDC as the PrivateMetaObject
-                    byte[] acc = ctx.getStub().getPrivateData(metaObject.getPrivateDataCollection(), id + ACR_STRING);
+                //check if the receiver defined an ACR
+                if (privateObjectExistsIntern(ctx, receiver + ACR_STRING, pdcOfACRRule)){ 
+                    byte[] acc = ctx.getStub().getPrivateData(pdcOfACRRule, receiver + ACR_STRING);
                     String accString = new String(acc, "UTF-8");
                     AcceptRule acceptRule = AcceptRule.fromJSONString(accString);
                     HashMap<String, HashMap<String, String>> acceptRules = acceptRule.getProductToAttributeAndRule();
@@ -316,7 +318,6 @@ public class NutriSafeContract implements ContractInterface {
                             String operator = condition.substring(0,2);  //eq, lt, gt
                             condition = condition.substring(2, condition.length());                               
                             if (operator.equals("eq")){
-                                returnV += "eq";
                                 if (!attributesToCheck.get(entry.getKey()).equals(condition)){
                                     response.put("status", "400");
                                     response.put("response", "The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " does not match the condition " + condition);
@@ -324,7 +325,6 @@ public class NutriSafeContract implements ContractInterface {
                                 }
                             }
                             else if (operator.equals("lt")){
-                                returnV += "lt";
                                 if (Integer.parseInt(attributesToCheck.get(entry.getKey())) >= Integer.parseInt(condition)){
                                 response.put("status", "400");
                                 response.put("response", "The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not lower than " + condition);
@@ -332,7 +332,6 @@ public class NutriSafeContract implements ContractInterface {
                                 }
                             }
                             else if (operator.equals("gt")){
-                                returnV += "gt";
                                 if (Integer.parseInt(attributesToCheck.get(entry.getKey())) <= Integer.parseInt(condition)){
                                 response.put("status", "400");
                                 response.put("response", "The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not greater than " + condition);

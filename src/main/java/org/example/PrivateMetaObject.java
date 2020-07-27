@@ -35,6 +35,11 @@ public class PrivateMetaObject {
     public void deleteAttribute(String attrName) {
         attributes.remove(attrName);
     }
+
+    @Override
+    public String toString(){
+        return toJSONString();
+    }
     
     public String toJSONString() {      
         Gson gson = new Gson();
