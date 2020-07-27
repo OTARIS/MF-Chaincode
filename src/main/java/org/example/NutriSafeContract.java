@@ -38,7 +38,7 @@ public class NutriSafeContract implements ContractInterface {
     private String META_DEF_ID = "METADEF";
     private String PDC_STRING = "_P";
     private String ACR_STRING = "_ACR";
-    private String AUTHORITY_PDC = "AUTH_PDC";
+    private String AUTHORITY_PDC = "AuthCollection";
     
     JSONObject response = new JSONObject(); 
 
