@@ -32,7 +32,7 @@ public class Utils {
     }
 
     public void putPrivateData(Context ctx, String pdc, String id, PrivateMetaObject privateMetaObject){
-        ctx.getStub().putPrivateData(pdc, id + NutriSafeContract.PDC_STRING, privateMetaObject.toJSONString().getBytes(UTF_8));
+        ctx.getStub().putPrivateData(pdc, id, privateMetaObject.toJSONString().getBytes(UTF_8));
     }
 
     public void putPrivateData(Context ctx, String pdc, String id, MetaObject metaObject){

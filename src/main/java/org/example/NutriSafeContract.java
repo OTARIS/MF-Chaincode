@@ -204,7 +204,7 @@ public class NutriSafeContract implements ContractInterface {
                 privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
             }
             
-            helper.putPrivateData(ctx, pdc, id, privateMetaObject);
+            helper.putPrivateData(ctx, pdc, id + PDC_STRING, privateMetaObject);
         }
 
         String timeStamp = ctx.getStub().getTxTimestamp().toString();
@@ -465,7 +465,7 @@ public class NutriSafeContract implements ContractInterface {
     @Transaction()
     public String exportDataToAuthPDC(Context ctx, String id) throws UnsupportedEncodingException{
 
-        if (helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
+        if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
 
         MetaObject metaObject = helper.getMetaObject(ctx, id);
        
