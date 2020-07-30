@@ -16,7 +16,7 @@ A MetaObject is a generic definition of the object stored in the blockchain
 public class MetaObject {
 
     @Property()
-    boolean alarmFlag = false; //TODO Implementierung
+    boolean alarmFlag = false;
 
     @Property()
     String productName = "";

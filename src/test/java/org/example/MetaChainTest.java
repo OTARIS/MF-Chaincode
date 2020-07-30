@@ -160,7 +160,7 @@ public final class MetaChainTest {
             Map<String, byte[]> transientMap = new HashMap<>();
             transientMap.put("Quality", "eqBio".getBytes(StandardCharsets.UTF_8));
             when(stub.getTransient()).thenReturn(transientMap);
-            String response = contract.addRuleNameAndCondition(ctx, "CollectionOne", "milklot");
+            String response = contract.addRuleNameAndCondition(ctx, "CollectionOne", "milklot", "false");
             assertTrue(response.contains("200"));
         }
 
@@ -174,7 +174,7 @@ public final class MetaChainTest {
             Map<String, byte[]> transientMap = new HashMap<>();
             transientMap.put("Quality", "eqBio".getBytes(StandardCharsets.UTF_8));
             when(stub.getTransient()).thenReturn(transientMap);
-            String response = contract.addRuleNameAndCondition(ctx, "CollectionOne", "milklot");
+            String response = contract.addRuleNameAndCondition(ctx, "CollectionOne", "milklot", "false");
             assertTrue(response.contains("200"));
             assertTrue(response.contains("ham"));
         }
@@ -306,7 +306,7 @@ public final class MetaChainTest {
             assertEquals(json, result);
         }
     }
-
+    
     @Nested
     class updateAttributesTests {
 
@@ -316,10 +316,10 @@ public final class MetaChainTest {
             String[] attrValues = {"10"};
             MetaObject milk1 = new MetaObject("", "milklot", attrNames, attrValues, "01.01.01", "Org1MSP");
             when(stub.getState("MILK1")).thenReturn(milk1.toJSONString().getBytes(StandardCharsets.UTF_8));
-            String result = contract.updateAttribute(ctx, "MILK1", "AmountInLiter", "50L");
-            assertEquals("kkk", result);
+            String result = contract.updateAttribute(ctx, "MILK1", "AmountInLiter", "50");
             assertTrue(result.contains("200"));
             assertTrue(result.contains("50"));
         }
     }
+    
 }

@@ -14,14 +14,22 @@ AcceptRules can be definied by an organisation to check if a product fulfills th
 @DataType()
 public class AcceptRule {
 
-    @Property()
-    String owner = "";
+    @Property
+    String autoAccept = "false";
 
     @Property()
     HashMap<String, HashMap<String, String>> productToAttributeAndRule = new HashMap<>();
     //(milklot, {(quality, gt10), (quantity, lt5)})
 
     public AcceptRule(){
+    }
+
+    public String getAutoAccept(){
+        return autoAccept;
+    }
+
+    public void setAutoAccept(String autoAccept){
+        this.autoAccept = autoAccept;
     }
 
     public void setProductToAttributeAndRule(HashMap<String, HashMap<String, String>> map){
