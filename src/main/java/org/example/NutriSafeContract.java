@@ -270,10 +270,12 @@ public class NutriSafeContract implements ContractInterface {
                     metaObject.setActualOwner(receiver);
                     metaObject.addTsAndOwner(ctx.getStub().getTxTimestamp().toString(), receiver);
                 }
+                else {
+                    metaObject.setReceiver(receiver); 
+                }
             }
         }
-
-        metaObject.setReceiver(receiver); 
+     
         helper.putState(ctx, id, metaObject);
 
         return helper.createReturnValue("200", metaObject.toString());
@@ -300,7 +302,7 @@ public class NutriSafeContract implements ContractInterface {
     @Transaction()
     public String addPredecessor(Context ctx, String[] predecessorIds, String id){
 
-        if (helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
+        if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
 
         for (String preId : predecessorIds){
             if (!helper.objectExists(ctx, preId)) return helper.createReturnValue("400", "The object with the key " +preId+ " does not exist");
