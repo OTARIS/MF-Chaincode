@@ -320,6 +320,32 @@ public final class MetaChainTest {
             assertTrue(result.contains("200"));
             assertTrue(result.contains("50"));
         }
+
+        @Test
+        public void updatePrivateAttribute() throws Exception {
+
+            String[] attrNames = {"AmountInLiter"};
+            String[] attrValues = {"10"};
+            MetaObject milk1 = new MetaObject(collection, "milklot", attrNames, attrValues, "01.01.01", "Org1MSP");
+            when(stub.getState("MILK1")).thenReturn(milk1.toJSONString().getBytes(StandardCharsets.UTF_8));
+
+            PrivateMetaObject pmo = new PrivateMetaObject();
+            pmo.addAttribute("Quality", "gut");
+            byte[] pmoBytes = pmo.toJSONString().getBytes(StandardCharsets.UTF_8);
+            when(stub.getPrivateData(collection, "MILK1_P")).thenReturn(pmoBytes);
+            when(stub.getPrivateDataHash(collection, "MILK1_P")).thenReturn(("privateMetaObject").getBytes(StandardCharsets.UTF_8));
+
+            Map<String, byte[]> transientMap = new HashMap<>();
+            transientMap.put("AmountInLiter", "150".getBytes(StandardCharsets.UTF_8));
+            when(stub.getTransient()).thenReturn(transientMap);
+
+            String result = contract.updateAttribute(ctx, "MILK1", "", "");
+            assertTrue(result.contains("200"));
+            assertTrue(result.contains("AmountInLiter"));
+            assertTrue(result.contains("Quality"));
+
+        }
+        
     }
     
 }

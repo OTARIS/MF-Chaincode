@@ -374,6 +374,7 @@ public class NutriSafeContract implements ContractInterface {
             }
 
             helper.putPrivateData(ctx, metaObject.getPrivateDataCollection(), id + PDC_STRING, privateMetaObject);
+            return helper.createReturnValue("200", privateMetaObject.toString()); 
         }
 
         return helper.createReturnValue("200", metaObject.toString()); 
@@ -484,5 +485,14 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     /* #endregion */
+
+
+    @Transaction
+    public String existTest(Context ctx, String id, String pdc){
+        if (helper.privateObjectExists(ctx, id, pdc)){
+            return helper.createReturnValue("200", "ja");
+        }
+        else return helper.createReturnValue("200", "nein");
+    }
 }
 
