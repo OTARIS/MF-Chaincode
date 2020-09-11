@@ -16,6 +16,9 @@ A MetaObject is a generic definition of the object stored in the blockchain
 public class MetaObject {
 
     @Property()
+    String key = "";
+
+    @Property()
     boolean alarmFlag = false;
 
     @Property()
@@ -62,6 +65,15 @@ public class MetaObject {
     public void setProductName(String productName) {
         this.productName = productName;
     }
+
+    public void setKey(String key){
+        this.key = key;
+    }
+
+    public String getKey(){
+        return key;
+    }
+
 
     public boolean getAlarmFlag() {
         return alarmFlag;
@@ -180,6 +192,9 @@ public class MetaObject {
 
         boolean alarm = new JSONObject(json).getBoolean("alarmFlag");
         metaObject.setAlarmFlag(alarm);
+
+        String key = new JSONObject(json).getString("key");
+        metaObject.setKey(key);
 
         String owner = new JSONObject(json).getString("actualOwner");
         metaObject.setActualOwner(owner);

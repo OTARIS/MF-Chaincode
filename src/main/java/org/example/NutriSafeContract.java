@@ -62,7 +62,7 @@ public class NutriSafeContract implements ContractInterface {
         }
         return helper.createReturnValue("200", jsonArray);        
     }
-   
+
     @Transaction
     public String objectExists(Context ctx, String id){            
         
@@ -209,6 +209,7 @@ public class NutriSafeContract implements ContractInterface {
 
         String timeStamp = ctx.getStub().getTxTimestamp().toString();
         MetaObject metaObject = new MetaObject(pdc, productName, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
+        metaObject.setKey(id);
         helper.putState(ctx, id, metaObject);
 
         return helper.createReturnValue("200", metaObject.toString());      
@@ -269,13 +270,12 @@ public class NutriSafeContract implements ContractInterface {
                 if (acceptRule.getAutoAccept().equals("true")){
                     metaObject.setActualOwner(receiver);
                     metaObject.addTsAndOwner(ctx.getStub().getTxTimestamp().toString(), receiver);
-                }
-                else {
-                    metaObject.setReceiver(receiver); 
-                }
+                    helper.putState(ctx, id, metaObject);
+                    return helper.createReturnValue("200", metaObject.toString());
+                }       
             }
         }
-     
+        metaObject.setReceiver(receiver); 
         helper.putState(ctx, id, metaObject);
 
         return helper.createReturnValue("200", metaObject.toString());
