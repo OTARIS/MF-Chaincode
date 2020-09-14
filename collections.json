@@ -1,0 +1,26 @@
+[
+     {
+          "name": "FarmCollection",
+          "policy": "OR('BrangusMSP.member', 'PinzgauerMSP.member', 'DeoniMSP.member')",
+          "requiredPeerCount": 1,
+          "maxPeerCount": 1,
+          "blockToLive": 0,
+          "memberOnlyRead": false
+     },
+     {
+          "name": "SalersCollection",
+          "policy": "OR('DeoniMSP.member', 'TuxerMSP.member', 'SalersMSP.member')",
+          "requiredPeerCount": 1,
+          "maxPeerCount": 1,
+          "blockToLive": 0,
+          "memberOnlyRead": false
+     },
+     {
+          "name": "AuthCollection",
+          "policy": "OR('SalersMSP.member')",
+          "requiredPeerCount": 1,
+          "maxPeerCount": 1,
+          "blockToLive": 2000,
+          "memberOnlyRead": false
+     }
+]
