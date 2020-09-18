@@ -19,6 +19,12 @@ public class MetaObject {
     String key = "";
 
     @Property()
+    double amount = 0;
+
+    @Property()
+    String unit = "";
+
+    @Property()
     boolean alarmFlag = false;
 
     @Property()
@@ -31,13 +37,13 @@ public class MetaObject {
     String privateDataCollection = "";
 
     @Property()
-    ArrayList<String> predecessor = new ArrayList<>();
-
-    @Property()
-    ArrayList<String> successor = new ArrayList<>();
-
-    @Property()
     String actualOwner = "";
+
+    @Property()
+    HashMap<String, String> predecessor = new HashMap<>();
+
+    @Property()
+    HashMap<String, String> successor = new HashMap<>();  
 
     @Property()
     HashMap<String, String> tsAndOwner = new HashMap<>();
@@ -48,24 +54,19 @@ public class MetaObject {
     public MetaObject(){
     }
 
-    public MetaObject(String pdc, String productName, String[] attrNames, String[] attrValues, String timeStamp, String owner){
+    public MetaObject(String pdc, String productName, double amount, String unit, String[] attrNames, String[] attrValues, String timeStamp, String owner){
         this.productName = productName;
         this.privateDataCollection = pdc;
         for (int i = 0; i < attrNames.length; i++){
             attributes.put(attrNames[i], attrValues[i]);
         }
         tsAndOwner.put(timeStamp, owner);
-        actualOwner = owner;       
+        actualOwner = owner;
+        this.unit = unit;
+        this.amount = amount;
     }
 
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
+    //key
     public void setKey(String key){
         this.key = key;
     }
@@ -74,7 +75,29 @@ public class MetaObject {
         return key;
     }
 
+    //amount
+    public void setAmount(double amount){
+        this.amount = amount;
+    }
 
+    public double getAmount(){
+        return amount;
+    }
+
+    public void addAmount(double amount){
+        this.amount += amount;
+    }
+
+    //unit
+    public void setUnit(String unit){
+        this.unit = unit;
+    }
+
+    public String getUnit(){
+        return unit;
+    }
+
+    //alarmFlag
     public boolean getAlarmFlag() {
         return alarmFlag;
     }
@@ -83,6 +106,25 @@ public class MetaObject {
         this.alarmFlag = alarmFlag;
     }
 
+    //productName
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    //receiver
+    public String getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(String receiver) {
+        this.receiver = receiver;
+    }
+
+    //pdc
     public String getPrivateDataCollection() {
         return privateDataCollection;
     }
@@ -91,6 +133,55 @@ public class MetaObject {
         privateDataCollection = pdc;
     }
 
+    //actualOwner
+    public String getActualOwner(){
+        return actualOwner;
+    }
+
+    public void setActualOwner(String owner){
+        actualOwner = owner;
+    }
+
+    //predecessor
+    public HashMap<String, String> getPredecessor() {
+        return predecessor;
+    }
+
+    public void setPredecessor(HashMap<String, String> predecessor) {
+        this.predecessor = predecessor;
+    }
+
+    public void addPredecessor(String predecessor, String message){
+            this.predecessor.put(predecessor, message);
+    }
+
+    //successor
+    public HashMap<String, String> getSuccessor() {
+        return successor;
+    }
+
+    public void setSuccessor(HashMap<String, String>successor) {
+        this.successor = successor;
+    }
+
+    public void addSuccessor(String successor, String message){
+            this.successor.put(successor, message);     
+    }
+
+    //tsAndOwner
+    public HashMap<String, String> getTsAndOwner(){
+        return tsAndOwner;
+    }
+
+    public void setTsAndOwner(HashMap<String, String> owner){
+        tsAndOwner = owner;
+    }
+
+    public void addTsAndOwner(String timeStamp, String owner){
+        tsAndOwner.put(timeStamp, owner);
+    }
+
+    //attributes
     public HashMap<String, String> getAttributes() {
         return attributes;
     }
@@ -111,100 +202,56 @@ public class MetaObject {
         attributes.remove(attrName);
     }
 
-    public void addTsAndOwner(String timeStamp, String owner){
-        tsAndOwner.put(timeStamp, owner);
-    }
-
-    public void setTsAndOwner(HashMap<String, String> owner){
-        tsAndOwner = owner;
-    }
-
-    public void setActualOwner(String owner){
-        actualOwner = owner;
-    }
-
-    public String getActualOwner(){
-        return actualOwner;
-    }
-
-    public void setReceiver(String receiver) {
-        this.receiver = receiver;
-    }
-
-    public String getReceiver() {
-        return receiver;
-    }
-
-    public void setSuccessor(ArrayList<String> successor) {
-        this.successor = successor;
-    }
-
-    public void addSuccessor(String successor){
-            this.successor.add(successor);      
-    }
-
-    public ArrayList<String> getSuccessor() {
-        return successor;
-    }
-
-    public void setPredecessor(ArrayList<String> predecessor) {
-        this.predecessor = predecessor;
-    }
-
-    public void addPredecessor(String[] predecessor){
-        for (String pre : predecessor){
-            this.predecessor.add(pre);
-        }   
-    }
-
-    public ArrayList<String> getPredecessor() {
-        return predecessor;
-    }
-
-    @Override
     public String toString(){
         return toJSONString();
-        /*
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n");
-        sb.append("Name: " + productName + "\n");
-        sb.append("Private Data Collection: " + privateDataCollection + "\n");
-        sb.append("Alarm flag: " + alarmFlag + "\n");
-        sb.append("Receiver: " + receiver + "\n");
-        sb.append("Actual Owner: " + actualOwner+ "\n");
-        sb.append("Attributes: " + attributes.toString() + "\n");
-        sb.append("TimeStamp and Owner: " + tsAndOwner.toString() + "\n");
-        sb.append("Predecessor: " + predecessor.toString() + "\n");
-        sb.append("Successor: " + successor.toString() + "\n");       
-        return sb.toString();
-        */
     }
 
+    //save and load
     public String toJSONString() {      
         Gson gson = new Gson();
         return gson.toJson(this);
     }
 
     public static MetaObject fromJSONString(String json) {
-        MetaObject metaObject = new MetaObject();
-        String name = new JSONObject(json).getString("productName");
-        metaObject.setProductName(name);
 
-        boolean alarm = new JSONObject(json).getBoolean("alarmFlag");
-        metaObject.setAlarmFlag(alarm);
+        MetaObject metaObject = new MetaObject();
 
         String key = new JSONObject(json).getString("key");
         metaObject.setKey(key);
 
-        String owner = new JSONObject(json).getString("actualOwner");
-        metaObject.setActualOwner(owner);
+        double amount = new JSONObject(json).getInt("amount");
+        metaObject.setAmount(amount);
 
-        String pdc = new JSONObject(json).getString("privateDataCollection");
-        metaObject.setPrivateDataCollection(pdc);
+        String unit = new JSONObject(json).getString("unit");
+        metaObject.setUnit(unit);
+
+        boolean alarm = new JSONObject(json).getBoolean("alarmFlag");
+        metaObject.setAlarmFlag(alarm);
+
+        String name = new JSONObject(json).getString("productName");
+        metaObject.setProductName(name);
 
         String rec = new JSONObject(json).getString("receiver");
         metaObject.setReceiver(rec);
 
+        String pdc = new JSONObject(json).getString("privateDataCollection");
+        metaObject.setPrivateDataCollection(pdc);
+
+        String owner = new JSONObject(json).getString("actualOwner");
+        metaObject.setActualOwner(owner);
+
+        String predecessorString = new JSONObject(json).get("predecessor").toString();
+        HashMap<String, String> predecessorMap = new Gson().fromJson(
+            predecessorString, new TypeToken<HashMap<String, String>>() {}.getType()
+        );
+        metaObject.setPredecessor(predecessorMap);
+
+        String successorString = new JSONObject(json).get("successor").toString();
+        HashMap<String, String> successorMap = new Gson().fromJson(
+            successorString, new TypeToken<HashMap<String, String>>() {}.getType()
+        );
+        metaObject.setSuccessor(successorMap);
+       
         String attributesString = new JSONObject(json).get("attributes").toString();
         HashMap<String, String> attributesMap = new Gson().fromJson(
             attributesString, new TypeToken<HashMap<String, String>>() {}.getType()
@@ -216,18 +263,6 @@ public class MetaObject {
             tsAndOwnerString, new TypeToken<HashMap<String, String>>() {}.getType()
         );
         metaObject.setTsAndOwner(tsAndOwnerMap);
-
-        String predecessorString = new JSONObject(json).get("predecessor").toString();
-        ArrayList<String> predecessorMap = new Gson().fromJson(
-            predecessorString, new TypeToken<ArrayList<String>>() {}.getType()
-        );
-        metaObject.setPredecessor(predecessorMap);
-
-        String successorString = new JSONObject(json).get("successor").toString();
-        ArrayList<String> successorMap = new Gson().fromJson(
-            successorString, new TypeToken<ArrayList<String>>() {}.getType()
-        );
-        metaObject.setSuccessor(successorMap);
 
         return metaObject;
     }

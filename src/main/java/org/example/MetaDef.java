@@ -22,39 +22,29 @@ public class MetaDef {
     @Property()
     HashMap<String, String> attributeToDataTypeMap;
 
+    @Property()
+    ArrayList<String> unitList;
+
     public MetaDef(){
         productNameToAttributesMap = new HashMap<>();
         attributeToDataTypeMap = new HashMap<>();
+        unitList = new ArrayList<>();
     }
 
-    public void addProductDefinition(String productName, List<String> attributes){
-        productNameToAttributesMap.put(productName, attributes);
+    //UnitList
+    public ArrayList<String> getUnitList(){
+        return unitList;
     }
 
-    public void addAttributeDefinition(String attribute, String dataType){
-        attributeToDataTypeMap.put(attribute, dataType);
+    public void setUnitList(ArrayList<String> unitList){
+        this.unitList = unitList;
     }
 
-    public void setProductNameToAttributesMap(HashMap<String, List<String>> map){
-        productNameToAttributesMap = map;
+    public void addUnitToUnitList(String unit){
+        unitList.add(unit);
     }
 
-    public HashMap<String, List<String>> getProductNameToAttributesMap(){
-        return productNameToAttributesMap;
-    }
-
-    public List<String> getAttributesByProductName(String productName) {
-        return productNameToAttributesMap.get(productName);
-    }
-
-    public boolean productNameExists(String productName){
-        return productNameToAttributesMap.containsKey(productName);
-    }
-
-    public void setAttributeToDataTypeMap(HashMap<String, String> map){
-        attributeToDataTypeMap = map;
-    }
-
+    //Attribute definitions
     public HashMap<String, String> getAttributeToDataTypeMap(){
         return attributeToDataTypeMap;
     }
@@ -63,30 +53,44 @@ public class MetaDef {
         return attributeToDataTypeMap.get(attribute);
     }
 
+    public void setAttributeToDataTypeMap(HashMap<String, String> map){
+        attributeToDataTypeMap = map;
+    }
+
+    public void addAttributeDefinition(String attribute, String dataType){
+        attributeToDataTypeMap.put(attribute, dataType);
+    }
+
     public boolean attributeExists(String attribute){
         return attributeToDataTypeMap.containsKey(attribute);
     }
 
-    public void createSampleData(){
-        ArrayList<String> sample = new ArrayList<>();
-        sample.add("Quality");
-        sample.add("AmountInLiter");
-        productNameToAttributesMap.put("milklot", sample);
-        attributeToDataTypeMap.put("Quality", "String");
-        attributeToDataTypeMap.put("AmountInLiter", "Integer");
+    //Product definitions
+    public HashMap<String, List<String>> getProductNameToAttributesMap(){
+        return productNameToAttributesMap;
     }
 
-    @Override
+    public List<String> getAttributesByProductName(String productName) {
+        return productNameToAttributesMap.get(productName);
+    }
+
+    public void setProductNameToAttributesMap(HashMap<String, List<String>> map){
+        productNameToAttributesMap = map;
+    }
+
+    public void addProductDefinition(String productName, List<String> attributes){
+        productNameToAttributesMap.put(productName, attributes);
+    }
+
+    public boolean productNameExists(String productName){
+        return productNameToAttributesMap.containsKey(productName);
+    }
+
     public String toString(){
         return toJSONString();
-        /*
-        StringBuilder sb = new StringBuilder();
-        sb.append("Product name to attributes:" + productNameToAttributesMap.toString() + "\n");
-        sb.append("Attributes to data type:" + attributeToDataTypeMap.toString());
-        return sb.toString();
-        */
     }
 
+    //Save and load
     public String toJSONString() {
         return new JSONObject(this).toString();
     }
@@ -105,6 +109,12 @@ public class MetaDef {
             attributeString, new TypeToken<HashMap<String, String>>() {}.getType()
         );
         metaDef.setAttributeToDataTypeMap(attributeMap);
+
+        String unitString = new JSONObject(json).get("unitList").toString();
+        ArrayList<String> unitList = new Gson().fromJson(
+            unitString, new TypeToken<ArrayList<String>>() {}.getType()
+        );
+        metaDef.setUnitList(unitList);
 
         return metaDef;     
     }   

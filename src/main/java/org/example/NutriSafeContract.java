@@ -15,7 +15,6 @@ import org.json.JSONObject;
 import org.hyperledger.fabric.contract.annotation.Contact;
 import org.hyperledger.fabric.contract.annotation.Info;
 import org.hyperledger.fabric.contract.annotation.License;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,7 +37,7 @@ public class NutriSafeContract implements ContractInterface {
     static String META_DEF_ID = "METADEF";
     static String PDC_STRING = "_P";
     static String ACR_STRING = "_ACR";
-    static String AUTHORITY_PDC = "CollectionTwo";
+    static String AUTHORITY_PDC = "AuthCollection";
 
     Utils helper = new Utils();
     
@@ -57,7 +56,7 @@ public class NutriSafeContract implements ContractInterface {
         Iterator<KeyValue> it = result.iterator();
         JSONArray jsonArray = new JSONArray();
         while (it.hasNext()){
-            jsonArray.put(it.next().getKey());
+            jsonArray.put(it.next().getValue());
        
         }
         return helper.createReturnValue("200", jsonArray);        
@@ -105,16 +104,6 @@ public class NutriSafeContract implements ContractInterface {
     /* #region META definitions */
 
     @Transaction()
-    public String META_createSampleData(Context ctx){
-        
-        MetaDef metaDef = new MetaDef();       
-        metaDef.createSampleData();
-        helper.putState(ctx, META_DEF_ID, metaDef);
-        
-        return helper.createReturnValue("200", metaDef.toString());
-    }
-
-    @Transaction()
     public String META_readMetaDef(Context ctx){
         
         if (!helper.objectExists(ctx, META_DEF_ID))return helper.createReturnValue("400", "The meta def wiht the key " +META_DEF_ID+ " does not exist");
@@ -126,10 +115,14 @@ public class NutriSafeContract implements ContractInterface {
 
     @Transaction()
     public String META_addAttributeDefinition(Context ctx, String attribute, String dataType){
+        MetaDef metaDef;
+        if (!helper.objectExists(ctx, META_DEF_ID)){
+            metaDef = new MetaDef();  
+        }
+        else {
+            metaDef = helper.getMetaDef(ctx);
+        }
 
-        if (!helper.objectExists(ctx, META_DEF_ID))return helper.createReturnValue("400", "The meta def wiht the key " +META_DEF_ID+ " does not exist");
-        
-        MetaDef metaDef = helper.getMetaDef(ctx);
         metaDef.addAttributeDefinition(attribute, dataType);
         helper.putState(ctx, META_DEF_ID, metaDef);
         
@@ -140,9 +133,14 @@ public class NutriSafeContract implements ContractInterface {
     @Transaction()
     public String META_addProductDefinition(Context ctx, String productName, String[] attributes){
 
-        if (!helper.objectExists(ctx, META_DEF_ID))return helper.createReturnValue("400", "The meta def wiht the key " +META_DEF_ID+ " does not exist");
-        
-        MetaDef metaDef = helper.getMetaDef(ctx);          
+        MetaDef metaDef;
+        if (!helper.objectExists(ctx, META_DEF_ID)){
+            metaDef = new MetaDef();  
+        }
+        else {
+            metaDef = helper.getMetaDef(ctx);
+        }
+                
         ArrayList<String> attributesArray = new ArrayList<>();
         HashMap<String, String> allowedAttributes = metaDef.getAttributeToDataTypeMap();
         
@@ -157,17 +155,43 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaDef.toString());  
     }
 
+    @Transaction()
+    public String META_addUnit(Context ctx, String unit){
+
+        MetaDef metaDef;
+        if (!helper.objectExists(ctx, META_DEF_ID)) metaDef = new MetaDef();  
+        else metaDef = helper.getMetaDef(ctx);
+
+        if (metaDef.getUnitList().contains(unit)) return helper.createReturnValue("400", "The unit " +unit+ " is still defined"); 
+        
+        metaDef.addUnitToUnitList(unit);
+        helper.putState(ctx, META_DEF_ID, metaDef); 
+
+        return helper.createReturnValue("200", metaDef.toString());  
+    }
+
+
     /* #endregion */
 
     /* #region META objects */
 
     @Transaction()
-    public String createObject(Context ctx, String id, String pdc, String productName, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
+    public String createObject(Context ctx, String id, String pdc, String productName, String amount, String unit, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
         
         if (helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
         
         MetaDef metaDef = helper.getMetaDef(ctx);
         if (!metaDef.productNameExists(productName)) return helper.createReturnValue("400", "The product name " +productName+ " is not defined");
+
+        if (!metaDef.getUnitList().contains(unit)) return helper.createReturnValue("400", "The unit " +unit+ " is not defined");
+
+        Double amountDouble = 0.0;
+        try {
+            amountDouble = Double.parseDouble(amount);
+        }
+        catch (Exception e) {
+            return helper.createReturnValue("400", "The amount " +amount+ " is not a double");
+        }
         
         List<String> allowedAttr = metaDef.getAttributesByProductName(productName);       
         int i = 0;
@@ -208,9 +232,13 @@ public class NutriSafeContract implements ContractInterface {
         }
 
         String timeStamp = ctx.getStub().getTxTimestamp().toString();
-        MetaObject metaObject = new MetaObject(pdc, productName, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
+        MetaObject metaObject = new MetaObject(pdc, productName, amountDouble, unit, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
         metaObject.setKey(id);
         helper.putState(ctx, id, metaObject);
+        
+        String answer = "Produkt erstellt: +" + id;
+        
+        ctx.getStub().setEvent("Produkt erstellt", answer.getBytes());
 
         return helper.createReturnValue("200", metaObject.toString());      
     }
@@ -243,7 +271,7 @@ public class NutriSafeContract implements ContractInterface {
         }
 
         if (!metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) return helper.createReturnValue("400", "You (" + ctx.getClientIdentity().getMSPID() + ") are not the actual owner");
-
+        
         if (helper.privateObjectExists(ctx, receiver + ACR_STRING, pdcOfACRRule)){ 
             AcceptRule acceptRule = helper.getAcceptRule(ctx, pdcOfACRRule, receiver + ACR_STRING);
             HashMap<String, HashMap<String, String>> acceptRules = acceptRule.getProductToAttributeAndRule();
@@ -300,26 +328,26 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     @Transaction()
-    public String addPredecessor(Context ctx, String[] predecessorIds, String id){
+    public String addPredecessor(Context ctx, String predecessorId, String id, String amountDif){
 
         if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
 
-        for (String preId : predecessorIds){
-            if (!helper.objectExists(ctx, preId)) return helper.createReturnValue("400", "The object with the key " +preId+ " does not exist");
-        }
-
+        if (!helper.objectExists(ctx, predecessorId)) return helper.createReturnValue("400", "The object with the key " +predecessorId+ " does not exist");
+       
         MetaObject metaObject = helper.getMetaObject(ctx, id);
-
         if (!metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) return helper.createReturnValue("400", "You are not the owner of " +id);
+    
+        MetaObject preMetaObject = helper.getMetaObject(ctx, predecessorId);
+        if (!preMetaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) return helper.createReturnValue("400", "You are not the owner of " +predecessorId);
+        
+        preMetaObject.addSuccessor(id, amountDif.substring(1)  + " " + preMetaObject.getUnit());
+        preMetaObject.addAmount(Double.parseDouble(amountDif));
 
-        for (String preId : predecessorIds){
-            MetaObject preMetaObject = helper.getMetaObject(ctx, preId);
-            if (!preMetaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) return helper.createReturnValue("400", "You are not the owner of " +preId);
-            preMetaObject.addSuccessor(id);
-            helper.putState(ctx, preId, preMetaObject);
-        }
+        if (preMetaObject.getAmount() < 0.0) return helper.createReturnValue("400", "The amount is lower than zero");
 
-        metaObject.addPredecessor(predecessorIds);
+        helper.putState(ctx, predecessorId, preMetaObject);
+        
+        metaObject.addPredecessor(predecessorId, amountDif.substring(1) + " " + preMetaObject.getUnit() + " " + preMetaObject.getProductName());
         helper.putState(ctx, id, metaObject);
 
         return helper.createReturnValue("200", metaObject.toString());         
@@ -453,9 +481,9 @@ public class NutriSafeContract implements ContractInterface {
         metaObject.setAlarmFlag(true);
         helper.putState(ctx, id, metaObject);
 
-        ArrayList<String> successors = metaObject.getSuccessor();
+        HashMap<String, String> successors = metaObject.getSuccessor();
 
-        for (String suc : successors){
+        for (String suc : successors.keySet()){
             MetaObject sucMetaObject = helper.getMetaObject(ctx, suc);
             sucMetaObject.setAlarmFlag(true);
             helper.putState(ctx, suc, metaObject);
