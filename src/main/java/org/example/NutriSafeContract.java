@@ -83,6 +83,11 @@ public class NutriSafeContract implements ContractInterface {
     public String deleteObject(Context ctx, String id){
         
         if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
+
+        MetaObject metaObject = helper.getMetaObject(ctx, id);
+        for (String pdc : metaObject.getPrivateDataCollection()){
+            deletePrivateObject(ctx, id + PDC_STRING, pdc);
+        }
         
         ctx.getStub().delState(id);
         
@@ -247,62 +252,27 @@ public class NutriSafeContract implements ContractInterface {
     public String readObject(Context ctx, String id){
         
         if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");  
-        
-        MetaObject metaObject = helper.getMetaObject(ctx, id);
-        if (!metaObject.getPrivateDataCollection().equals("")){
-                PrivateMetaObject privateMetaObject = helper.getPrivateMetaObject(ctx, metaObject.getPrivateDataCollection(), id + PDC_STRING);                
-                return helper.createReturnValue("200", metaObject.toString() + "Private Data: " + privateMetaObject.toString()); 
-            }
 
-        return helper.createReturnValue("200", metaObject.toString()); 
+        MetaObject metaObject = helper.getMetaObject(ctx, id);
+
+        HashMap<String, String> pdcMap = new HashMap<>();
+
+        for (String pdc : metaObject.getPrivateDataCollection()){
+            PrivateMetaObject privateMetaObject = helper.getPrivateMetaObject(ctx, pdc, id + PDC_STRING);                
+            pdcMap.putAll(privateMetaObject.getAttributes());
+        }
+        return helper.createReturnValue("200", metaObject.toString() + "Private Data: " + pdcMap); 
     }
 
     @Transaction()
-    public String setReceiver(Context ctx, String id, String receiver, String pdcOfACRRule) throws UnsupportedEncodingException{
+    public String setReceiver(Context ctx, String id, String receiver) throws UnsupportedEncodingException{
         
         if (!helper.objectExists(ctx, id))return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
         
         MetaObject metaObject = helper.getMetaObject(ctx, id);
-        
-        HashMap<String, String> attributesToCheck = new HashMap<>();
-        if (metaObject.getPrivateDataCollection().length() >= 3){ 
-            PrivateMetaObject privateMetaObject = helper.getPrivateMetaObject(ctx, metaObject.getPrivateDataCollection(), id + PDC_STRING);
-            attributesToCheck.putAll(privateMetaObject.getAttributes());
-        }
-
+         
         if (!metaObject.getActualOwner().equals(ctx.getClientIdentity().getMSPID())) return helper.createReturnValue("400", "You (" + ctx.getClientIdentity().getMSPID() + ") are not the actual owner");
         
-        if (helper.privateObjectExists(ctx, receiver + ACR_STRING, pdcOfACRRule)){ 
-            AcceptRule acceptRule = helper.getAcceptRule(ctx, pdcOfACRRule, receiver + ACR_STRING);
-            HashMap<String, HashMap<String, String>> acceptRules = acceptRule.getProductToAttributeAndRule();
-            
-            if (acceptRules.containsKey(metaObject.getProductName())){
-                HashMap<String, String> attributeToCondition = acceptRules.get(metaObject.getProductName());
-                attributesToCheck.putAll(metaObject.getAttributes());
-
-                for (Map.Entry<String, String> entry : attributeToCondition.entrySet()){
-                    String condition = entry.getValue();
-                    String operator = condition.substring(0,2);  //eq, lt, gt
-                    condition = condition.substring(2, condition.length()); 
-
-                    if (operator.equals("eq")){
-                        if (!attributesToCheck.get(entry.getKey()).equals(condition)) return helper.createReturnValue("400", "The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " does not match the condition " + condition);
-                    }
-                    else if (operator.equals("lt")){
-                        if (Integer.parseInt(attributesToCheck.get(entry.getKey())) >= Integer.parseInt(condition)) return helper.createReturnValue("400", "The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not lower than " + condition);
-                    }
-                    else if (operator.equals("gt")){
-                        if (Integer.parseInt(attributesToCheck.get(entry.getKey())) <= Integer.parseInt(condition)) return helper.createReturnValue("400", "The attribute " +entry.getKey()+ " with the value " +attributesToCheck.get(entry.getKey())+ " is not greater than " + condition);                                                                                  
-                    }
-                }
-                if (acceptRule.getAutoAccept().equals("true")){
-                    metaObject.setActualOwner(receiver);
-                    metaObject.addTsAndOwner(ctx.getStub().getTxTimestamp().toString(), receiver);
-                    helper.putState(ctx, id, metaObject);
-                    return helper.createReturnValue("200", metaObject.toString());
-                }       
-            }
-        }
         metaObject.setReceiver(receiver); 
         helper.putState(ctx, id, metaObject);
 
@@ -364,108 +334,64 @@ public class NutriSafeContract implements ContractInterface {
 
         List<String> allowedAttr = metaDef.getAttributesByProductName(metaObject.getProductName());
 
-        if (!attrName.equals("")){
 
-            if (!allowedAttr.contains(attrName)) return helper.createReturnValue("400", "The attrName "+attrName+  " is not defined");
+        if (!allowedAttr.contains(attrName)) return helper.createReturnValue("400", "The attrName "+attrName+  " is not defined");
 
-            if (metaDef.getDataTypeByAttribute(attrName).equals("Integer")){
+        if (metaDef.getDataTypeByAttribute(attrName).equals("Integer")){
 
-                if (!attrValue.matches("-?\\d+")) return helper.createReturnValue("400", "The attribute " +attrName+ " is not an Integer");
-            }
-
-            metaObject.addAttribute(attrName, attrValue);
-            helper.putState(ctx, id, metaObject);
+            if (!attrValue.matches("-?\\d+")) return helper.createReturnValue("400", "The attribute " +attrName+ " is not an Integer");
         }
 
-        Map<String, byte[]> transientData = ctx.getStub().getTransient();
-        if (transientData.size() != 0) {
-
-            for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
-                
-                if (!allowedAttr.contains(entry.getKey())) return helper.createReturnValue("400", "The attrName "+entry.getKey()+  " is not defined");
-                
-                if (metaDef.getDataTypeByAttribute(entry.getKey()).equals("Integer")){
-                    
-                    String value = new String(entry.getValue(), "UTF-8");                  
-                    if (!value.matches("-?\\d+")) return helper.createReturnValue("400", "The attribute " +entry.getKey()+ " is not an Integer");        
-                }   
-            }
-
-
-            PrivateMetaObject privateMetaObject = new PrivateMetaObject();
-
-            if (helper.privateObjectExists(ctx, id + PDC_STRING, metaObject.getPrivateDataCollection())){
-                
-                privateMetaObject = helper.getPrivateMetaObject(ctx, metaObject.getPrivateDataCollection(), id + PDC_STRING);
-            }
-
-            for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
-                privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
-            }
-
-            helper.putPrivateData(ctx, metaObject.getPrivateDataCollection(), id + PDC_STRING, privateMetaObject);
-            return helper.createReturnValue("200", privateMetaObject.toString()); 
-        }
+        metaObject.addAttribute(attrName, attrValue);
+        helper.putState(ctx, id, metaObject);
 
         return helper.createReturnValue("200", metaObject.toString()); 
     
         
     } 
-    
-    /* #endregion */
-
-    /* #region Accept rules */
 
     @Transaction()
-    public String addRuleNameAndCondition(Context ctx, String pdc, String product, String autoAccept) throws UnsupportedEncodingException{
-        
-        AcceptRule acceptRule = new AcceptRule();
+    public String updatePrivateAttribute(Context ctx, String id, String pdc) throws UnsupportedEncodingException{
 
-        String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
-        if (helper.privateObjectExists(ctx, acrKey, pdc)){ 
-            acceptRule = helper.getAcceptRule(ctx, pdc, acrKey);
-        }
+        if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
 
-        Map<String, byte[]> transientData = ctx.getStub().getTransient(); 
+        MetaObject metaObject = helper.getMetaObject(ctx, id);
 
-        if (transientData.size() == 0) return helper.createReturnValue("400", "No transient data passed");
+        MetaDef metaDef = helper.getMetaDef(ctx);
+        List<String> allowedAttr = metaDef.getAttributesByProductName(metaObject.getProductName());
+
+        Map<String, byte[]> transientData = ctx.getStub().getTransient();
+        if (transientData.size() == 0) return helper.createReturnValue("400", "No transient data passed");  
 
         for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
-            acceptRule.addEntryToProductToAttributeAndRule(product, entry.getKey(), new String(entry.getValue(), "UTF-8"));
+                
+            if (!allowedAttr.contains(entry.getKey())) return helper.createReturnValue("400", "The attrName "+entry.getKey()+  " is not defined");
+            
+            if (metaDef.getDataTypeByAttribute(entry.getKey()).equals("Integer")){
+                
+                String value = new String(entry.getValue(), "UTF-8");                  
+                if (!value.matches("-?\\d+")) return helper.createReturnValue("400", "The attribute " +entry.getKey()+ " is not an Integer");        
+            }   
         }
 
-        acceptRule.setAutoAccept(autoAccept);
+        PrivateMetaObject privateMetaObject = new PrivateMetaObject();
 
-        helper.putPrivateData(ctx, pdc, acrKey, acceptRule);
+        if (helper.privateObjectExists(ctx, id + PDC_STRING, pdc)){
+                
+            privateMetaObject = helper.getPrivateMetaObject(ctx, pdc, id + PDC_STRING);
+        }
+        if (!metaObject.getPrivateDataCollection().contains(pdc)){
+            metaObject.addPrivateDataCollection(pdc);
+        }
 
-        return helper.createReturnValue("200", acceptRule.toString());
+        for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
+            privateMetaObject.addAttribute(entry.getKey(), new String(entry.getValue(), "UTF-8"));
+        }
+
+        helper.putPrivateData(ctx, pdc, id + PDC_STRING, privateMetaObject);
+        return helper.createReturnValue("200", privateMetaObject.toString());
     }
-
-    @Transaction()
-    public String deleteRuleForProduct(Context ctx, String pdc, String product) throws UnsupportedEncodingException{
-        
-        String acrKey = ctx.getClientIdentity().getMSPID() + ACR_STRING;
-        
-        if (!helper.privateObjectExists(ctx, acrKey, pdc)) return helper.createReturnValue("400", "There is no AcceptRule Object defined");
-        
-        AcceptRule acceptRule = helper.getAcceptRule(ctx, pdc, acrKey);
-        acceptRule.deleteEntryFromProductToAttributeAndRule(product);
-
-        helper.putPrivateData(ctx, pdc, acrKey, acceptRule);
-
-        return helper.createReturnValue("200", acceptRule.toString());
-    }
-
-    @Transaction()
-    public String readAccept(Context ctx, String id, String pdc) throws UnsupportedEncodingException{
-
-        if (!helper.privateObjectExists(ctx, id + ACR_STRING, pdc)) return helper.createReturnValue("400", "There is no AcceptRule Object defined");
-
-        AcceptRule acceptRule = helper.getAcceptRule(ctx, pdc, id + ACR_STRING);
-
-        return helper.createReturnValue("200", acceptRule.toString());
-    }
-
+    
     /* #endregion */
     
     /* #region alarm handling */
@@ -491,7 +417,7 @@ public class NutriSafeContract implements ContractInterface {
 
         return helper.createReturnValue("200", metaObject.toString());
     }
-
+    /*
     //not tested
     @Transaction()
     public String exportDataToAuthPDC(Context ctx, String id) throws UnsupportedEncodingException{
@@ -513,16 +439,8 @@ public class NutriSafeContract implements ContractInterface {
 
         return helper.createReturnValue("200", metaObject.toString());       
     }
+    */
 
     /* #endregion */
-
-
-    @Transaction
-    public String existTest(Context ctx, String id, String pdc){
-        if (helper.privateObjectExists(ctx, id, pdc)){
-            return helper.createReturnValue("200", "ja");
-        }
-        else return helper.createReturnValue("200", "nein");
-    }
 }
 

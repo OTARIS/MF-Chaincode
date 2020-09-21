@@ -34,10 +34,10 @@ public class MetaObject {
     String receiver = "";
 
     @Property()
-    String privateDataCollection = "";
+    String actualOwner = "";
 
     @Property()
-    String actualOwner = "";
+    ArrayList<String> privateDataCollection = new ArrayList<>();
 
     @Property()
     HashMap<String, String> predecessor = new HashMap<>();
@@ -56,7 +56,9 @@ public class MetaObject {
 
     public MetaObject(String pdc, String productName, double amount, String unit, String[] attrNames, String[] attrValues, String timeStamp, String owner){
         this.productName = productName;
-        this.privateDataCollection = pdc;
+        if (!pdc.equals("") && !pdc.equals("null")){
+            this.privateDataCollection.add(pdc);
+        }
         for (int i = 0; i < attrNames.length; i++){
             attributes.put(attrNames[i], attrValues[i]);
         }
@@ -125,12 +127,16 @@ public class MetaObject {
     }
 
     //pdc
-    public String getPrivateDataCollection() {
+    public ArrayList<String> getPrivateDataCollection() {
         return privateDataCollection;
     }
 
-    public void setPrivateDataCollection(String pdc) {
+    public void setPrivateDataCollection(ArrayList<String> pdc) {
         privateDataCollection = pdc;
+    }
+
+    public void addPrivateDataCollection(String pdc) {
+        privateDataCollection.add(pdc);
     }
 
     //actualOwner
@@ -234,8 +240,11 @@ public class MetaObject {
         String rec = new JSONObject(json).getString("receiver");
         metaObject.setReceiver(rec);
 
-        String pdc = new JSONObject(json).getString("privateDataCollection");
-        metaObject.setPrivateDataCollection(pdc);
+        String pdcString = new JSONObject(json).get("privateDataCollection").toString();
+        ArrayList<String> pdcMap = new Gson().fromJson(
+            pdcString, new TypeToken<ArrayList<String>>() {}.getType()
+        );
+        metaObject.setPrivateDataCollection(pdcMap);
 
         String owner = new JSONObject(json).getString("actualOwner");
         metaObject.setActualOwner(owner);
