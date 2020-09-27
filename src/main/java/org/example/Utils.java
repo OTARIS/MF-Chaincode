@@ -11,10 +11,11 @@ import org.json.JSONObject;
 public class Utils {
 
     /**
-     * Create a return value with a status code and a message
+     * Creates a return value with a status code and a message
      * 
      * @param statusCode the status code to pass (200 ok, 400 error)
      * @param message the message to pass
+     * 
      * @return the return message as json string
      */
     String createReturnValue(String statusCode, Object message){
@@ -27,6 +28,7 @@ public class Utils {
     /**
      * @param ctx the hyperledger context object
      * @param id the id to check
+     * 
      * @return true, if object exists
      */
     boolean objectExists(Context ctx, String id){
@@ -38,6 +40,7 @@ public class Utils {
      * @param ctx the hyperledger context object
      * @param id the id to check
      * @param pdc the private data collection where the object should be stored
+     * 
      * @return true, if object exists
      */
     public boolean privateObjectExists(Context ctx, String id, String pdc) {
@@ -46,7 +49,7 @@ public class Utils {
     }
 
     /**
-     * Write the MetaDef to the ledger
+     * Writes the MetaDef to the ledger
      * 
      * @param ctx the hyperledger context object
      * @param id the corresponding id for the object
@@ -56,7 +59,7 @@ public class Utils {
     }
 
     /**
-     * Write the MetaObject to the ledger
+     * Writes the MetaObject to the ledger
      * 
      * @param ctx the hyperledger context object
      * @param id the corresponding id for the object
@@ -66,7 +69,7 @@ public class Utils {
     }
 
     /**
-     * Write the PrivateMetaObject inside the specified private data collection
+     * Writes the PrivateMetaObject inside the specified private data collection
      * 
      * @param ctx the hyperledger context object
      * @param pdc the corresponding private data collection for the object
@@ -77,7 +80,7 @@ public class Utils {
     }
 
     /**
-     * Get the PrivateMetaObject (if it does not exist, an empty Object will be created)
+     * Gets the PrivateMetaObject (if it does not exist, an empty Object will be created)
      * 
      * @param ctx the hyperledger context object
      * @param pdc the private data collection where the object should be stored
@@ -97,6 +100,7 @@ public class Utils {
 
     /**
      * @param ctx the hyperledger context object
+     * 
      * @return the MetaDef object
      */
     public MetaDef getMetaDef(Context ctx){
@@ -106,6 +110,7 @@ public class Utils {
     /**
      * @param ctx the hyperledger context object
      * @param id the corresponding id for the object
+     * 
      * @return the MetaObject
      */
     public MetaObject getMetaObject(Context ctx, String id){
