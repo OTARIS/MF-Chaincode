@@ -155,7 +155,7 @@ public class MetaDef {
     }
 
     /**
-     * Converts the json string of this object back to a MetaDef
+     * Convert the json string of this object back to a MetaDef
      * 
      * @param json the json String of the object to decrypt
      * @return the decrypted object
