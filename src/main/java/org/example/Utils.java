@@ -53,6 +53,7 @@ public class Utils {
      * 
      * @param ctx the hyperledger context object
      * @param id the corresponding id for the object
+     * @param metaDef the MetaDef object to save
      */
     public void putState(Context ctx, String id, MetaDef metaDef){
         ctx.getStub().putState(id, metaDef.toJSONString().getBytes(UTF_8)); 
@@ -63,6 +64,7 @@ public class Utils {
      * 
      * @param ctx the hyperledger context object
      * @param id the corresponding id for the object
+     * @param metaObject the MetaObject to save
      */
     public void putState(Context ctx, String id, MetaObject metaObject){
         ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8)); 
@@ -74,6 +76,7 @@ public class Utils {
      * @param ctx the hyperledger context object
      * @param pdc the corresponding private data collection for the object
      * @param id the corresponding id for the object
+     * @param privateMetaObject the privateMetaObject to save
      */
     public void putPrivateData(Context ctx, String pdc, String id, PrivateMetaObject privateMetaObject){
         ctx.getStub().putPrivateData(pdc, id, privateMetaObject.toJSONString().getBytes(UTF_8));
@@ -85,6 +88,8 @@ public class Utils {
      * @param ctx the hyperledger context object
      * @param pdc the private data collection where the object should be stored
      * @param id the corresponding id for the object
+     *
+     * @return the privateMetaObject
      */
     public PrivateMetaObject getPrivateMetaObject(Context ctx, String pdc, String id){     
         try {

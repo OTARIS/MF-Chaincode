@@ -282,6 +282,8 @@ public class NutriSafeContract implements ContractInterface {
      * @param unit the unit definition of this object
      * @param attributes the names of all attributes (defined in the MetaDef)
      * @param attrValues the values of this object corresponding the attribute names
+     *
+     * @throws UnsupportedEncodingException if private object can't be decoded
      * 
      * @return the object
      */
@@ -502,6 +504,8 @@ public class NutriSafeContract implements ContractInterface {
      * @param ctx the hyperledger context object
      * @param id the id of the object
      * @param pdc the private data collection to store the private data
+     *
+     * @throws UnsupportedEncodingException if private object can't be decoded
      * 
      * @return the object
      */
@@ -552,7 +556,7 @@ public class NutriSafeContract implements ContractInterface {
     /* #region alarm handling */
 
      /**
-     * Activate the alarm (All successors will be informed)
+     * Activates the alarm (All successors will be informed)
      * 
      * @param ctx the hyperledger context object
      * @param id the id of the object
