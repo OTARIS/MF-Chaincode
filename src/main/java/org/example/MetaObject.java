@@ -34,7 +34,7 @@ public class MetaObject {
     String unit = "";
 
     /**
-     * The alarm flag of this object (is there a problem wiht this objectt?)
+     * The alarm flag of this object (is there a problem with this object?)
      */
     @Property()
     boolean alarmFlag = false;
@@ -64,7 +64,7 @@ public class MetaObject {
     ArrayList<String> privateDataCollection = new ArrayList<>();
 
     /**
-     * The list of keys of all predecesors of this object
+     * The list of keys of all predecessors of this object
      */
     @Property()
     HashMap<String, String> predecessor = new HashMap<>();
@@ -98,12 +98,12 @@ public class MetaObject {
      * 
      * @param pdc the private data collection where to store the private data (empty if no private data necessary)
      * @param productName the product name of this objects (defined in the MetaDef)
-     * @param amount the inital amount of this object
-     * @param unit the unit definiton of this object
+     * @param amount the initial amount of this object
+     * @param unit the unit definition of this object
      * @param attrNames the names of all attributes (defined in the MetaDef)
      * @param attrValues the values of this object corresponding the attribute names
      * @param timeStamp the time of the creation (auto generated)
-     * @param owner the inital owner of this object
+     * @param owner the initial owner of this object
      */
     public MetaObject(String pdc, String productName, double amount, String unit, String[] attrNames, String[] attrValues, String timeStamp, String owner){
         this.productName = productName;
@@ -162,7 +162,7 @@ public class MetaObject {
     }
 
     /**
-     * @return the unit definiton
+     * @return the unit definition
      */
     public String getUnit(){
         return unit;
@@ -305,7 +305,7 @@ public class MetaObject {
 
     /**
      * @param timeStamp the timestamp to add
-     * @param message the owner corresponding to the timestamp
+     * @param owner the owner corresponding to the timestamp
      */
     public void addTsAndOwner(String timeStamp, String owner){
         tsAndOwner.put(timeStamp, owner);
