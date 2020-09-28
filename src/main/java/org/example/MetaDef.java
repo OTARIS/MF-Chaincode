@@ -73,6 +73,7 @@ public class MetaDef {
 
     /**
      * @param attribute get data type for this attribute
+     * 
      * @return the data typ for the specified attribute
      */
     public String getDataTypeByAttribute(String attribute){
@@ -96,6 +97,7 @@ public class MetaDef {
 
     /**
      * @param attribute the attribute to check
+     * 
      * @return true if the atrribute exits
      */
     public boolean attributeExists(String attribute){
@@ -111,6 +113,7 @@ public class MetaDef {
 
     /**
      * @param productName get attributes of this product
+     * 
      * @return the attributes of the specified product
      */
     public List<String> getAttributesByProductName(String productName) {
@@ -134,6 +137,7 @@ public class MetaDef {
 
     /**
      * @param productName the product to check
+     * 
      * @return true if the product exists
      */
     public boolean productNameExists(String productName){
@@ -158,6 +162,7 @@ public class MetaDef {
      * Converts the json string of this object back to a MetaDef
      * 
      * @param json the json String of the object to decrypt
+     * 
      * @return the decrypted object
      */
     public static MetaDef fromJSONString(String json){

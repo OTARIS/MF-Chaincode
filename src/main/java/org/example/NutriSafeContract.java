@@ -1,6 +1,3 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- */
 package org.example;
 
 import org.hyperledger.fabric.contract.Context;
@@ -22,9 +19,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The main contract 
+ */
+
 @Contract(name = "NutriSafeContract",
     info = @Info(title = "NutriSafe contract",
-                description = "Chaincode for the research project NutriSafe",
+                description = "Chaincode of the research project NutriSafe",
                 version = "1",
                 license =
                         @License(name = "Apache-2.0",
@@ -34,19 +35,40 @@ import java.util.Map;
 @Default
 public class NutriSafeContract implements ContractInterface {
 
+    /**
+     * The id where to find the MetaDef object
+     */
     static String META_DEF_ID = "METADEF";
+
+    /**
+     * Suffix for the private part of a object
+     */
     static String PDC_STRING = "_P";
-    static String ACR_STRING = "_ACR";
+
+    /**
+     * Name of the state-owned private data collection
+     */
     static String AUTHORITY_PDC = "AuthCollection";
 
+    /**
+     * The Utils object
+     */
     Utils helper = new Utils();
     
-    JSONObject response = new JSONObject(); 
-
+    /**
+     * Empty constructor
+     */
     public  NutriSafeContract() {}
 
     /* #region utils */
 
+    /**
+     * Query the local state database (Couch DB query indexes)
+     * 
+     * @param ctx the hyperledger context object
+     * @param queryString the query string 
+     * @return a list of all objects that fulfill the condition
+     */
     @Transaction
     public String queryChaincodeByQueryString(Context ctx, String queryString) throws Exception{
        
@@ -62,6 +84,14 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", jsonArray);        
     }
 
+    /**
+     * Checks if an object to the given id exists
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id to check
+     * 
+     * @return true, if the object exists
+     */
     @Transaction
     public String objectExists(Context ctx, String id){            
         
@@ -71,6 +101,15 @@ public class NutriSafeContract implements ContractInterface {
 
     }
 
+    /**
+     * Checks if a private object to the given id exists
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id to check
+     * @param pdc the private data collection to check
+     * 
+     * @return true, if the private object exists (and we are allowed to see it)
+     */
     @Transaction()
     public String privateObjectExists(Context ctx, String id, String pdc) {
         
@@ -79,6 +118,14 @@ public class NutriSafeContract implements ContractInterface {
         else return helper.createReturnValue("200", "false");
     }
 
+    /**
+     * Deletes the object
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id to delete
+     * 
+     * @return 200, if object was deleted; 400, if the object does not exist
+     */
     @Transaction()
     public String deleteObject(Context ctx, String id){
         
@@ -94,6 +141,15 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", "The object with the key " +id+ " was deleted");
     } 
 
+    /**
+     * Deletes the private object
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id to delete
+     * @param pdc the private data collection where to find the object
+     * 
+     * @return 200, if object was deleted; 400, if the object does not exist (or we are not allowed to delete it)
+     */
     @Transaction()
     public String deletePrivateObject(Context ctx, String id, String pdc) {
         
@@ -108,6 +164,13 @@ public class NutriSafeContract implements ContractInterface {
 
     /* #region META definitions */
 
+    /**
+     * Reads the meta def
+     * 
+     * @param ctx the hyperledger context object
+     * 
+     * @return the meta def
+     */
     @Transaction()
     public String META_readMetaDef(Context ctx){
         
@@ -118,6 +181,16 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaDef.toString());
     }
 
+    /**
+     * Adds an attribute to the meta def 
+     * If no meta def exists, it will be created
+     * 
+     * @param ctx the hyperledger context object
+     * @param attribute the name of the attribute to add
+     * @param dataType the data type of the attribute to add
+     * 
+     * @return the meta def
+     */
     @Transaction()
     public String META_addAttributeDefinition(Context ctx, String attribute, String dataType){
         MetaDef metaDef;
@@ -135,6 +208,16 @@ public class NutriSafeContract implements ContractInterface {
        
     }
 
+    /**
+     * Adds a product to the meta def 
+     * If no meta def exists, it will be created
+     * 
+     * @param ctx the hyperledger context object
+     * @param productName the name of the new product 
+     * @param attributes the attributes of the new product
+     * 
+     * @return the meta def
+     */
     @Transaction()
     public String META_addProductDefinition(Context ctx, String productName, String[] attributes){
 
@@ -160,6 +243,15 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaDef.toString());  
     }
 
+    /**
+     * Adds an unit to the meta def
+     * If no meta def exists, it will be created
+     * 
+     * @param ctx the hyperledger context object
+     * @param attribute the name of the unit
+     * 
+     * @return the meta def
+     */
     @Transaction()
     public String META_addUnit(Context ctx, String unit){
 
@@ -180,6 +272,20 @@ public class NutriSafeContract implements ContractInterface {
 
     /* #region META objects */
 
+    /**
+     * Creates a new object (Pass transient data, to create private attribute ("attribute":"value"))
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id of the object
+     * @param pdc the private data collection where to store the private data (empty if no private data necessary)
+     * @param productName the product name of this objects (defined in the MetaDef)
+     * @param amount the inital amount of this object
+     * @param unit the unit definiton of this object
+     * @param attributes the names of all attributes (defined in the MetaDef)
+     * @param attrValues the values of this object corresponding the attribute names
+     * 
+     * @return the object
+     */
     @Transaction()
     public String createObject(Context ctx, String id, String pdc, String productName, String amount, String unit, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
         
@@ -248,6 +354,14 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaObject.toString());      
     }
 
+    /**
+     * Reads an object
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id of the object
+     * 
+     * @return the object
+     */
     @Transaction()
     public String readObject(Context ctx, String id){
         
@@ -264,6 +378,15 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaObject.toString() + "Private Data: " + pdcMap); 
     }
 
+    /**
+     * Sets the receiver
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id of the object
+     * @param receiver the receiver to set
+     * 
+     * @return the object
+     */
     @Transaction()
     public String setReceiver(Context ctx, String id, String receiver) throws UnsupportedEncodingException{
         
@@ -279,6 +402,14 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaObject.toString());
     }
 
+    /**
+     * Changes the owner
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id of the object
+     * 
+     * @return the object
+     */
     @Transaction()
     public String changeOwner(Context ctx, String id){
         
@@ -297,6 +428,16 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaObject.toString());
     }
 
+    /**
+     * Adds a predecessor
+     * 
+     * @param ctx the hyperledger context object
+     * @param predecessorId the id of the predecessor
+     * @param id the id of the successor
+     * @param amountDif the amount that was transferred
+     * 
+     * @return the successor object
+     */
     @Transaction()
     public String addPredecessor(Context ctx, String predecessorId, String id, String amountDif){
 
@@ -323,6 +464,16 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaObject.toString());         
     }
     
+    /**
+     * Updates an object
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id of the object
+     * @param attrName the name of the attribute
+     * @param attrValue the new value of this attribute
+     * 
+     * @return the object
+     */
     @Transaction()
     public String updateAttribute(Context ctx, String id, String attrName, String attrValue) throws UnsupportedEncodingException{
         
@@ -350,6 +501,15 @@ public class NutriSafeContract implements ContractInterface {
         
     } 
 
+    /**
+     * Updates a private attribute (Transient data("attribute":"value"))
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id of the object
+     * @param pdc the private data collection to store the private data
+     * 
+     * @return the object
+     */
     @Transaction()
     public String updatePrivateAttribute(Context ctx, String id, String pdc) throws UnsupportedEncodingException{
 
@@ -396,6 +556,14 @@ public class NutriSafeContract implements ContractInterface {
     
     /* #region alarm handling */
 
+     /**
+     * Activate the alarm (All successors will be informed)
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id of the object
+     * 
+     * @return the object
+     */
     @Transaction()
     public String activateAlarm(Context ctx, String id){
         
@@ -417,6 +585,15 @@ public class NutriSafeContract implements ContractInterface {
 
         return helper.createReturnValue("200", metaObject.toString());
     }
+
+    /**
+     * Exports the informtation of an alarm object to the auth collection
+     * 
+     * @param ctx the hyperledger context object
+     * @param id the id of the object
+     * 
+     * @return the object
+     */
     /*
     //not tested
     @Transaction()

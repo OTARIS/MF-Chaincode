@@ -11,13 +11,11 @@ import org.json.JSONObject;
  * A PrivateMetaObject is linked to a MetaObject and stores the private information
  */
 
-
-
 @DataType()
 public class PrivateMetaObject {
 
     /**
-     * the private attributes to store
+     * The private attributes to store
      */
     @Property()
     HashMap<String, String> attributes = new HashMap<>();
