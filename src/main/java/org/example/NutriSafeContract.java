@@ -8,7 +8,6 @@ import org.hyperledger.fabric.contract.annotation.Transaction;
 import org.hyperledger.fabric.shim.ledger.KeyValue;
 import org.hyperledger.fabric.shim.ledger.QueryResultsIterator;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.hyperledger.fabric.contract.annotation.Contact;
 import org.hyperledger.fabric.contract.annotation.Info;
 import org.hyperledger.fabric.contract.annotation.License;
@@ -70,7 +69,7 @@ public class NutriSafeContract implements ContractInterface {
      * @return a list of all objects that fulfill the condition
      */
     @Transaction
-    public String queryChaincodeByQueryString(Context ctx, String queryString) throws Exception{
+    public String queryChaincodeByQueryString(Context ctx, String queryString){
        
         QueryResultsIterator<KeyValue> result = ctx.getStub().getQueryResult(queryString);
         //"{\"selector\":{\"actualOwner\":\"Org1MSP\"}}"
@@ -174,7 +173,7 @@ public class NutriSafeContract implements ContractInterface {
     @Transaction()
     public String META_readMetaDef(Context ctx){
         
-        if (!helper.objectExists(ctx, META_DEF_ID))return helper.createReturnValue("400", "The meta def wiht the key " +META_DEF_ID+ " does not exist");
+        if (!helper.objectExists(ctx, META_DEF_ID))return helper.createReturnValue("400", "The meta def with the key " +META_DEF_ID+ " does not exist");
         
         MetaDef metaDef = helper.getMetaDef(ctx);
         
@@ -248,7 +247,7 @@ public class NutriSafeContract implements ContractInterface {
      * If no meta def exists, it will be created
      * 
      * @param ctx the hyperledger context object
-     * @param attribute the name of the unit
+     * @param unit the name of the unit
      * 
      * @return the meta def
      */
@@ -279,10 +278,12 @@ public class NutriSafeContract implements ContractInterface {
      * @param id the id of the object
      * @param pdc the private data collection where to store the private data (empty if no private data necessary)
      * @param productName the product name of this objects (defined in the MetaDef)
-     * @param amount the inital amount of this object
-     * @param unit the unit definiton of this object
+     * @param amount the initial amount of this object
+     * @param unit the unit definition of this object
      * @param attributes the names of all attributes (defined in the MetaDef)
      * @param attrValues the values of this object corresponding the attribute names
+     *
+     * @throws UnsupportedEncodingException if private object can't be decoded
      * 
      * @return the object
      */
@@ -346,10 +347,6 @@ public class NutriSafeContract implements ContractInterface {
         MetaObject metaObject = new MetaObject(pdc, productName, amountDouble, unit, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
         metaObject.setKey(id);
         helper.putState(ctx, id, metaObject);
-        
-        String answer = "Produkt erstellt: +" + id;
-        
-        ctx.getStub().setEvent("Produkt erstellt", answer.getBytes());
 
         return helper.createReturnValue("200", metaObject.toString());      
     }
@@ -388,7 +385,7 @@ public class NutriSafeContract implements ContractInterface {
      * @return the object
      */
     @Transaction()
-    public String setReceiver(Context ctx, String id, String receiver) throws UnsupportedEncodingException{
+    public String setReceiver(Context ctx, String id, String receiver){
         
         if (!helper.objectExists(ctx, id))return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
         
@@ -475,7 +472,7 @@ public class NutriSafeContract implements ContractInterface {
      * @return the object
      */
     @Transaction()
-    public String updateAttribute(Context ctx, String id, String attrName, String attrValue) throws UnsupportedEncodingException{
+    public String updateAttribute(Context ctx, String id, String attrName, String attrValue){
         
         if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
        
@@ -507,6 +504,8 @@ public class NutriSafeContract implements ContractInterface {
      * @param ctx the hyperledger context object
      * @param id the id of the object
      * @param pdc the private data collection to store the private data
+     *
+     * @throws UnsupportedEncodingException if private object can't be decoded
      * 
      * @return the object
      */
@@ -557,7 +556,7 @@ public class NutriSafeContract implements ContractInterface {
     /* #region alarm handling */
 
      /**
-     * Activate the alarm (All successors will be informed)
+     * Activates the alarm (All successors will be informed)
      * 
      * @param ctx the hyperledger context object
      * @param id the id of the object
@@ -587,7 +586,7 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     /**
-     * Exports the informtation of an alarm object to the auth collection
+     * Exports the information of an alarm object to the auth collection
      * 
      * @param ctx the hyperledger context object
      * @param id the id of the object

@@ -98,7 +98,7 @@ public class MetaDef {
     /**
      * @param attribute the attribute to check
      * 
-     * @return true if the atrribute exits
+     * @return true if the attribute exits
      */
     public boolean attributeExists(String attribute){
         return attributeToDataTypeMap.containsKey(attribute);
