@@ -135,6 +135,10 @@ public class MetaDef {
         productNameToAttributesMap.put(productName, attributes);
     }
 
+    public void deleteProductDefinition(String productName){
+        productNameToAttributesMap.remove(productName);
+    }
+
     /**
      * @param productName the product to check
      * 
