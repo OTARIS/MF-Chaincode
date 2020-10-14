@@ -591,6 +591,7 @@ public class NutriSafeContract implements ContractInterface {
             sucMetaObject.setAlarmFlag(true);
             helper.putState(ctx, suc, metaObject);
         }
+        helper.emitEvent(ctx, "alarm_activated", ctx.getStub().getCreator());
 
         return helper.createReturnValue("200", metaObject.toString());
     }
