@@ -185,7 +185,7 @@ public class NutriSafeContract implements ContractInterface {
         if (!helper.objectExists(ctx, META_DEF_ID))return helper.createReturnValue("400", "The meta def with the key " +META_DEF_ID+ " does not exist");
 
         MetaDef metaDef = helper.getMetaDef(ctx);
-        if(!metaDef.productNameExists(name))return helper.createReturnValue("400", "The product with name" +name+ "doesn't exist");
+        if(!metaDef.productNameExists(name))return helper.createReturnValue("400", "The product with name " +name+ " doesn't exist");
         metaDef.deleteProductDefinition(name);
         helper.putState(ctx, META_DEF_ID, metaDef);
         return helper.createReturnValue("200", metaDef.toString());
@@ -591,7 +591,7 @@ public class NutriSafeContract implements ContractInterface {
             sucMetaObject.setAlarmFlag(true);
             helper.putState(ctx, suc, metaObject);
         }
-        helper.emitEvent(ctx, "alarm_activated", ctx.getStub().getCreator());
+        helper.emitEvent(ctx, "alarm_activated", metaObject.toString().getBytes());
 
         return helper.createReturnValue("200", metaObject.toString());
     }
