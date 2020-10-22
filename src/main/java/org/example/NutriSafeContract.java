@@ -597,6 +597,35 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     /**
+     * Dectivates the alarm (All successors will be informed)
+     *
+     * @param ctx
+     * @param id
+     *
+     * @return the object
+     */
+    @Transaction()
+    public String deactivateAlarm(Context ctx, String id){
+
+        //TODO Prüfung auf Berechtigung
+
+        if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
+
+        MetaObject metaObject = helper.getMetaObject(ctx, id);
+        metaObject.setAlarmFlag(false);
+        helper.putState(ctx, id, metaObject);
+
+        HashMap<String, String> successors = metaObject.getSuccessor();
+
+        for (String suc : successors.keySet()){
+            MetaObject sucMetaObject = helper.getMetaObject(ctx, suc);
+            sucMetaObject.setAlarmFlag(false);
+            helper.putState(ctx, suc, metaObject);
+        }
+
+        return helper.createReturnValue("200", metaObject.toString());
+    }
+    /**
      * Exports the information of an alarm object to the auth collection
      * 
      * @param ctx the hyperledger context object
