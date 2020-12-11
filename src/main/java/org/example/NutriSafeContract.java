@@ -212,6 +212,8 @@ public class NutriSafeContract implements ContractInterface {
             metaDef = helper.getMetaDef(ctx);
         }
 
+        if (!dataType.equals("String") && !dataType.equals("Integer")) return helper.createReturnValue("400", "The data type (" +dataType+ ") must be String or Integer");
+
         metaDef.addAttributeDefinition(attribute, dataType);
         helper.putState(ctx, META_DEF_ID, metaDef);
         
@@ -329,6 +331,7 @@ public class NutriSafeContract implements ContractInterface {
 
         i = 0;
         Map<String, byte[]> transientData = ctx.getStub().getTransient();
+        String setPDCTo = pdc;
         if (transientData.size() != 0) {
             
             if (pdc.equals("")) return helper.createReturnValue("400", "Please select a private data collection to store the private data");
@@ -354,9 +357,10 @@ public class NutriSafeContract implements ContractInterface {
             
             helper.putPrivateData(ctx, pdc, id + PDC_STRING, privateMetaObject);
         }
+        else setPDCTo = "";
 
         String timeStamp = ctx.getStub().getTxTimestamp().toString();
-        MetaObject metaObject = new MetaObject(pdc, productName, amountDouble, unit, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
+        MetaObject metaObject = new MetaObject(setPDCTo, productName, amountDouble, unit, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
         metaObject.setKey(id);
         helper.putState(ctx, id, metaObject);
 
@@ -451,7 +455,7 @@ public class NutriSafeContract implements ContractInterface {
      * @return the successor object
      */
     @Transaction()
-    public String addPredecessor(Context ctx, String predecessorId, String id, String amountDif){
+    public String addPredecessor(Context ctx, String predecessorId, String id, String amountDif, String addAmount){
 
         if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
 
@@ -467,6 +471,8 @@ public class NutriSafeContract implements ContractInterface {
         preMetaObject.addAmount(Double.parseDouble(amountDif));
 
         if (preMetaObject.getAmount() < 0.0) return helper.createReturnValue("400", "The amount is lower than zero");
+
+        metaObject.addAmount(Double.parseDouble(addAmount));
 
         helper.putState(ctx, predecessorId, preMetaObject);
         
@@ -487,7 +493,7 @@ public class NutriSafeContract implements ContractInterface {
      * @return the object
      */
     @Transaction()
-    public String updateAttribute(Context ctx, String id, String attrName, String attrValue){
+    public String updateAttribute(Context ctx, String id, String[] attrName, String[] attrValue){
         
         if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
        
@@ -496,21 +502,18 @@ public class NutriSafeContract implements ContractInterface {
         MetaDef metaDef = helper.getMetaDef(ctx);
 
         List<String> allowedAttr = metaDef.getAttributesByProductName(metaObject.getProductName());
-
-
-        if (!allowedAttr.contains(attrName)) return helper.createReturnValue("400", "The attrName "+attrName+  " is not defined");
-
-        if (metaDef.getDataTypeByAttribute(attrName).equals("Integer")){
-
-            if (!attrValue.matches("-?\\d+")) return helper.createReturnValue("400", "The attribute " +attrName+ " is not an Integer");
+        int i = 0;
+        for (String name : attrName) {
+            if (!allowedAttr.contains(name)) return helper.createReturnValue("400", "The attrName "+name+  " is not defined");
+            if (metaDef.getDataTypeByAttribute(name).equals("Integer")){
+                if (!attrValue[i].matches("-?\\d+")) return helper.createReturnValue("400", "The attribute " +name+ " is not an Integer");
+            }
+            metaObject.addAttribute(name, attrValue[i]);
+            i++;
         }
-
-        metaObject.addAttribute(attrName, attrValue);
         helper.putState(ctx, id, metaObject);
 
         return helper.createReturnValue("200", metaObject.toJSON());
-    
-        
     } 
 
     /**
