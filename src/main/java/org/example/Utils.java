@@ -121,6 +121,14 @@ public class Utils {
     public MetaObject getMetaObject(Context ctx, String id){
         return MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
     }
-    
+
+    /**
+     * @param ctx
+     * @param name
+     * @param payload
+     */
+    public void emitEvent(Context ctx, String name, byte[] payload){
+        ctx.getStub().setEvent(name, payload);
+    }
     
 }
