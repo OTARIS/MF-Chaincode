@@ -45,7 +45,7 @@ public final class MetaChainTest {
         contract = new NutriSafeContract();
 
         metaDef = new MetaDef();
-        metaDef.createSampleData();
+        //metaDef.createSampleData();
         when(stub.getState("METADEF")).thenReturn(metaDef.toJSONString().getBytes(StandardCharsets.UTF_8));
         Instant instant = Instant.parse("2020-01-01T01:01:01Z");
         when(stub.getTxTimestamp()).thenReturn(instant);
@@ -59,7 +59,7 @@ public final class MetaChainTest {
     class MetaDefTests {
         @Test
         public void createSampleData(){
-            contract.META_createSampleData(ctx);          
+            //contract.META_createSampleData(ctx);
             String json = "{\"productNameToAttributesMap\":{\"milklot\":[\"Quality\",\"AmountInLiter\"]},\"attributeToDataTypeMap\":{\"AmountInLiter\":\"Integer\",\"Quality\":\"String\"}}";
             verify(stub).putState("METADEF", json.getBytes(UTF_8));
         }
@@ -87,7 +87,7 @@ public final class MetaChainTest {
             assertEquals(json, result);
         }        
     }
-    
+ /*
     @Nested
     class CreateObjectTests {
 
@@ -347,5 +347,5 @@ public final class MetaChainTest {
         }
         
     }
-    
+ */
 }
