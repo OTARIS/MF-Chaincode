@@ -71,6 +71,13 @@ public class PrivateMetaObject {
         return gson.toJson(this);
     }
 
+    /**
+     * @return the json object
+     */
+    public JSONObject toJSON() {
+        return new JSONObject(this);
+    }
+
      /**
      * Converts the json string of this object back to a PrivateMetaObject
      * 

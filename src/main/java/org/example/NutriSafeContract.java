@@ -8,6 +8,7 @@ import org.hyperledger.fabric.contract.annotation.Transaction;
 import org.hyperledger.fabric.shim.ledger.KeyValue;
 import org.hyperledger.fabric.shim.ledger.QueryResultsIterator;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.hyperledger.fabric.contract.annotation.Contact;
 import org.hyperledger.fabric.contract.annotation.Info;
 import org.hyperledger.fabric.contract.annotation.License;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
 
 /**
  * The main contract 
@@ -77,7 +79,7 @@ public class NutriSafeContract implements ContractInterface {
         Iterator<KeyValue> it = result.iterator();
         JSONArray jsonArray = new JSONArray();
         while (it.hasNext()){
-            jsonArray.put(it.next().getValue());
+            jsonArray.put(new String(it.next().getValue(), StandardCharsets.UTF_8));
        
         }
         return helper.createReturnValue("200", jsonArray);        
@@ -177,7 +179,7 @@ public class NutriSafeContract implements ContractInterface {
         
         MetaDef metaDef = helper.getMetaDef(ctx);
         
-        return helper.createReturnValue("200", metaDef.toString());
+        return helper.createReturnValue("200", metaDef.toJSON());
     }
 
     /**
@@ -203,7 +205,7 @@ public class NutriSafeContract implements ContractInterface {
         metaDef.addAttributeDefinition(attribute, dataType);
         helper.putState(ctx, META_DEF_ID, metaDef);
         
-        return helper.createReturnValue("200", metaDef.toString());
+        return helper.createReturnValue("200", metaDef.toJSON());
        
     }
 
@@ -239,7 +241,7 @@ public class NutriSafeContract implements ContractInterface {
         metaDef.addProductDefinition(productName, attributesArray);
         helper.putState(ctx, META_DEF_ID, metaDef); 
         
-        return helper.createReturnValue("200", metaDef.toString());  
+        return helper.createReturnValue("200", metaDef.toJSON());
     }
 
     /**
@@ -263,7 +265,7 @@ public class NutriSafeContract implements ContractInterface {
         metaDef.addUnitToUnitList(unit);
         helper.putState(ctx, META_DEF_ID, metaDef); 
 
-        return helper.createReturnValue("200", metaDef.toString());  
+        return helper.createReturnValue("200", metaDef.toJSON());
     }
 
 
@@ -348,7 +350,7 @@ public class NutriSafeContract implements ContractInterface {
         metaObject.setKey(id);
         helper.putState(ctx, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toString());      
+        return helper.createReturnValue("200", metaObject.toJSON());
     }
 
     /**
@@ -372,7 +374,10 @@ public class NutriSafeContract implements ContractInterface {
             PrivateMetaObject privateMetaObject = helper.getPrivateMetaObject(ctx, pdc, id + PDC_STRING);                
             pdcMap.putAll(privateMetaObject.getAttributes());
         }
-        return helper.createReturnValue("200", metaObject.toString() + "Private Data: " + pdcMap); 
+        JSONObject returnValue = metaObject.toJSON();
+        returnValue.put("privateData", new JSONObject(pdcMap));
+
+        return helper.createReturnValue("200", returnValue);
     }
 
     /**
@@ -396,7 +401,7 @@ public class NutriSafeContract implements ContractInterface {
         metaObject.setReceiver(receiver); 
         helper.putState(ctx, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toString());
+        return helper.createReturnValue("200", metaObject.toJSON());
     }
 
     /**
@@ -422,7 +427,7 @@ public class NutriSafeContract implements ContractInterface {
         metaObject.setActualOwner(newOwner);
         helper.putState(ctx, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toString());
+        return helper.createReturnValue("200", metaObject.toJSON());
     }
 
     /**
@@ -458,7 +463,7 @@ public class NutriSafeContract implements ContractInterface {
         metaObject.addPredecessor(predecessorId, amountDif.substring(1) + " " + preMetaObject.getUnit() + " " + preMetaObject.getProductName());
         helper.putState(ctx, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toString());         
+        return helper.createReturnValue("200", metaObject.toJSON());
     }
     
     /**
@@ -493,7 +498,7 @@ public class NutriSafeContract implements ContractInterface {
         metaObject.addAttribute(attrName, attrValue);
         helper.putState(ctx, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toString()); 
+        return helper.createReturnValue("200", metaObject.toJSON());
     
         
     } 
@@ -548,7 +553,7 @@ public class NutriSafeContract implements ContractInterface {
         }
 
         helper.putPrivateData(ctx, pdc, id + PDC_STRING, privateMetaObject);
-        return helper.createReturnValue("200", privateMetaObject.toString());
+        return helper.createReturnValue("200", privateMetaObject.toJSON());
     }
     
     /* #endregion */
@@ -582,7 +587,7 @@ public class NutriSafeContract implements ContractInterface {
             helper.putState(ctx, suc, metaObject);
         }
 
-        return helper.createReturnValue("200", metaObject.toString());
+        return helper.createReturnValue("200", metaObject.toJSON());
     }
 
     /**
