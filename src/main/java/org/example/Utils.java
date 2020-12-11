@@ -109,8 +109,10 @@ public class Utils {
      * @return the MetaDef object
      */
     public MetaDef getMetaDef(Context ctx){
+
         return MetaDef.fromJSONString(new String(ctx.getStub().getState(NutriSafeContract.META_DEF_ID)));
     }
+
 
     /**
      * @param ctx the hyperledger context object

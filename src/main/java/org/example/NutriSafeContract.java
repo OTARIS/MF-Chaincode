@@ -172,11 +172,21 @@ public class NutriSafeContract implements ContractInterface {
      */
     @Transaction()
     public String META_readMetaDef(Context ctx){
-        
+
         if (!helper.objectExists(ctx, META_DEF_ID))return helper.createReturnValue("400", "The meta def with the key " +META_DEF_ID+ " does not exist");
-        
+
         MetaDef metaDef = helper.getMetaDef(ctx);
-        
+
+        return helper.createReturnValue("200", metaDef.toString());
+    }
+
+    @Transaction()
+    public String META_readMetaDef(Context ctx, int version){
+
+        if (!helper.objectExists(ctx, META_DEF_ID))return helper.createReturnValue("400", "The meta def with the key " +META_DEF_ID+ " does not exist");
+
+        MetaDef metaDef = helper.getMetaDef(ctx);
+
         return helper.createReturnValue("200", metaDef.toString());
     }
 

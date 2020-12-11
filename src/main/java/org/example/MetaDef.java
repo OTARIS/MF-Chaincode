@@ -34,6 +34,9 @@ public class MetaDef {
     @Property()
     ArrayList<String> unitList;
 
+    @Property()
+    static int version = 0;
+
     /**
      * Class constructor
      */
@@ -41,6 +44,11 @@ public class MetaDef {
         productNameToAttributesMap = new HashMap<>();
         attributeToDataTypeMap = new HashMap<>();
         unitList = new ArrayList<>();
+        MetaDef.version++;
+    }
+
+    public static int META_getMetaDefVersion(){
+        return MetaDef.version;
     }
 
     /** 
