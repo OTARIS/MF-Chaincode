@@ -82,6 +82,10 @@ public class Utils {
         ctx.getStub().putPrivateData(pdc, id, privateMetaObject.toJSONString().getBytes(UTF_8));
     }
 
+    public void putPrivateData(Context ctx, String pdc, String id, Order order){
+        ctx.getStub().putPrivateData(pdc, id, order.toJSONString().getBytes(UTF_8));
+    }
+
     /**
      * Gets the PrivateMetaObject (if it does not exist, an empty Object will be created)
      * 

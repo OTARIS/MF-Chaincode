@@ -36,6 +36,8 @@ import java.nio.charset.StandardCharsets;
 @Default
 public class NutriSafeContract implements ContractInterface {
 
+    int actualInterchangeNumber = 1;
+
     /**
      * The id where to find the MetaDef object
      */
@@ -666,5 +668,28 @@ public class NutriSafeContract implements ContractInterface {
     */
 
     /* #endregion */
+
+    @Transaction()
+    public String createOrder(Context ctx, String id, String pdc, String sender, String recipient, String pickupTime, String deliverTime) throws Exception{
+
+        if (helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
+
+        String interchangeNumber = "INT_" + actualInterchangeNumber;
+        Order order = new Order(interchangeNumber, sender, recipient, ctx.getStub().getTxTimestamp().toString(), pickupTime, deliverTime);
+        actualInterchangeNumber++;
+
+        Map<String, byte[]> transientData = ctx.getStub().getTransient();
+        if (transientData.size() == 0) return helper.createReturnValue("400", "No transient data passed");
+
+        for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
+
+            order.addItem(entry.getKey(), new String(entry.getValue(), "UTF-8"));
+
+        }
+        helper.putPrivateData(ctx, pdc, id, order);
+
+        return helper.createReturnValue("200", order.toJSONString());
+    }
+
 }
 
