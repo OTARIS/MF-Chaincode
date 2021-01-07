@@ -115,6 +115,10 @@ public class Order {
         return new JSONObject(this).toString();
     }
 
+    public JSONObject toJSON() {
+        return new JSONObject(this);
+    }
+
     public static Order fromJSONString(String json) {
         Order order = new Order();
 

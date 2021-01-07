@@ -107,6 +107,17 @@ public class Utils {
         
     }
 
+    public Order getOrder(Context ctx, String pdc, String id){
+        try {
+            byte[] pmoArray = ctx.getStub().getPrivateData(pdc, id);
+            String pmoString = new String(pmoArray, "UTF-8");
+            return Order.fromJSONString(pmoString);
+        }
+        catch (Exception e){
+            return new Order();
+        }
+    }
+
     /**
      * @param ctx the hyperledger context object
      * 

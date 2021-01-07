@@ -676,7 +676,7 @@ public class NutriSafeContract implements ContractInterface {
 
         String interchangeNumber = "INT_" + actualInterchangeNumber;
         Order order = new Order(interchangeNumber, sender, recipient, ctx.getStub().getTxTimestamp().toString(), pickupTime, deliverTime);
-        actualInterchangeNumber++;
+        //actualInterchangeNumber++;
 
         Map<String, byte[]> transientData = ctx.getStub().getTransient();
         if (transientData.size() == 0) return helper.createReturnValue("400", "No transient data passed");
@@ -690,6 +690,35 @@ public class NutriSafeContract implements ContractInterface {
 
         return helper.createReturnValue("200", order.toJSONString());
     }
+
+    @Transaction()
+    public String createOrder1(Context ctx, String id) throws Exception{
+
+        if (helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
+
+
+        Order order = new Order("Test123", "Brangus", "Deoni", ctx.getStub().getTxTimestamp().toString(), "01012020", "03012020");
+        //actualInterchangeNumber++;
+
+
+            order.addItem("milk", "100$L");
+
+
+        helper.putPrivateData(ctx, "OrderCollection", id, order);
+
+        return helper.createReturnValue("200", order.toJSON());
+    }
+
+    @Transaction()
+    public String readOrder(Context ctx, String id, String pdc) throws Exception{
+
+        if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
+
+        Order order = helper.getOrder(ctx, id, pdc);
+
+        return helper.createReturnValue("200", order.toJSON());
+    }
+
 
 }
 
