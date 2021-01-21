@@ -670,12 +670,12 @@ public class NutriSafeContract implements ContractInterface {
     /* #endregion */
 
     @Transaction()
-    public String createOrder(Context ctx, String id, String pdc, String sender, String recipient, String pickupTime, String deliverTime) throws Exception{
+    public String createShipment(Context ctx, String id, String pdc, String sender, String recipient, String pickupTime, String deliverTime) throws Exception{
 
         if (helper.privateObjectExists(ctx, id, pdc)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
 
         //String interchangeNumber = "INT_" + actualInterchangeNumber;
-        Order order = new Order("001", sender, recipient, ctx.getStub().getTxTimestamp().toString(), pickupTime, deliverTime);
+        Shipment shipment = new Shipment("001", sender, recipient, ctx.getStub().getTxTimestamp().toString(), pickupTime, deliverTime);
         //actualInterchangeNumber++;
 
         Map<String, byte[]> transientData = ctx.getStub().getTransient();
@@ -683,124 +683,41 @@ public class NutriSafeContract implements ContractInterface {
 
         for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
 
-            order.addItem(entry.getKey(), new String(entry.getValue(), "UTF-8"));
+            shipment.addItem(entry.getKey(), new String(entry.getValue(), "UTF-8"));
 
         }
-        helper.putPrivateData(ctx, pdc, id, order);
+        helper.emitEvent(ctx, "shipment_created", shipment.toString().getBytes());
+        helper.putPrivateData(ctx, pdc, id, shipment);
 
-        return helper.createReturnValue("200", order.toJSON());
+        return helper.createReturnValue("200", shipment.toJSON());
     }
 
     @Transaction()
-    public String createOrder1(Context ctx, String id, String pdc) throws Exception{
-
-        if (helper.privateObjectExists(ctx, id, pdc))return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
-
-
-        Order order = new Order("Test123", "Brangus", "Deoni", ctx.getStub().getTxTimestamp().toString(), "01012020", "03012020");
-        //actualInterchangeNumber++;
-
-
-        order.addItem("milk", "100L");
-
-
-        helper.putPrivateData(ctx, pdc, id, order);
-
-        return helper.createReturnValue("200", order.toJSON());
-    }
-
-    @Transaction()
-    public String createOrder2(Context ctx, String id, String sender) throws Exception{
-
-        if (helper.privateObjectExists(ctx, id, "OrderCollection"))return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
-
-
-        Order order = new Order("Test123", sender, "Deoni", ctx.getStub().getTxTimestamp().toString(), "01012020", "03012020");
-        //actualInterchangeNumber++;
-
-
-        order.addItem("milk", "100L");
-
-
-        helper.putPrivateData(ctx, "OrderCollection", id, order);
-
-        return helper.createReturnValue("200", order.toJSON());
-    }
-
-    @Transaction()
-    public String createOrder3(Context ctx, String id, String pdc, String sender) throws Exception{
-
-        if (helper.privateObjectExists(ctx, id, pdc))return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
-
-
-        Order order = new Order("Test123", sender, "Deoni", ctx.getStub().getTxTimestamp().toString(), "01012020", "03012020");
-        //actualInterchangeNumber++;
-
-
-        order.addItem("milk", "100L");
-
-
-        helper.putPrivateData(ctx, pdc, id, order);
-
-        return helper.createReturnValue("200", order.toJSON());
-    }
-
-    @Transaction()
-    public String createOrder4(Context ctx, String id, String pdc, String sender, String recipient) throws Exception{
-
-        if (helper.privateObjectExists(ctx, id, pdc))return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
-
-
-        Order order = new Order("Test123", sender, recipient, ctx.getStub().getTxTimestamp().toString(), "01012020", "03012020");
-        //actualInterchangeNumber++;
-
-
-        order.addItem("milk", "100L");
-
-
-        helper.putPrivateData(ctx, pdc, id, order);
-
-        return helper.createReturnValue("200", order.toJSON());
-    }
-
-    @Transaction()
-    public String createOrder5(Context ctx, String id, String pdc, String sender, String recipient, String pickupTime, String deliverTime) throws Exception{
-
-        if (helper.privateObjectExists(ctx, id, pdc))return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
-
-
-        Order order = new Order("Test123", sender, recipient, ctx.getStub().getTxTimestamp().toString(), pickupTime, deliverTime);
-        //actualInterchangeNumber++;
-
-
-        order.addItem("milk", "100L");
-
-
-        helper.putPrivateData(ctx, pdc, id, order);
-
-        return helper.createReturnValue("200", order.toJSON());
-    }
-
-
-
-    @Transaction()
-    public String readOrder(Context ctx, String id) throws Exception{
-
-        if (!helper.privateObjectExists(ctx, id, "OrderCollection")) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
-
-        Order order = helper.getOrder(ctx,"OrderCollection", id);
-
-        return helper.createReturnValue("200", order.toJSON());
-    }
-
-    @Transaction()
-    public String readOrder1(Context ctx, String id, String pdc) throws Exception{
+    public String readShipment(Context ctx, String id, String pdc) throws Exception{
 
         if (!helper.privateObjectExists(ctx, id, pdc)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
 
-        Order order = helper.getOrder(ctx, pdc, id);
+        Shipment shipment = helper.getShipment(ctx, pdc, id);
 
-        return helper.createReturnValue("200", order.toJSON());
+        return helper.createReturnValue("200", shipment.toJSON());
+    }
+
+    @Transaction()
+    public String updateShipment(Context ctx, String id, String pdc, String attribute, String attrValue){
+
+        if (!helper.privateObjectExists(ctx, id, pdc)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
+
+        Shipment shipment = helper.getShipment(ctx, pdc, id);
+
+        if (shipment.updateAttribute(attribute, attrValue)){
+            helper.emitEvent(ctx, "shipment_updated", shipment.toString().getBytes());
+            return helper.createReturnValue("200", shipment.toJSON());
+        }
+        else {
+            return helper.createReturnValue("400", "You cant update this attribute");
+        }
+
+
     }
 
 

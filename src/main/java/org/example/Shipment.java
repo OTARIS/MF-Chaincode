@@ -7,7 +7,7 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 
-public class Order {
+public class Shipment {
 
     @Property
     String interchangeNumber;
@@ -28,9 +28,12 @@ public class Order {
     String deliverTime;
 
     @Property
+    String status;
+
+    @Property
     HashMap<String, String> items = new HashMap<>();
 
-    public Order(String sender, String recipient, String timestamp, String pickupTime, String deliverTime, HashMap<String, String> items){
+    public Shipment(String sender, String recipient, String timestamp, String pickupTime, String deliverTime, HashMap<String, String> items){
         this.sender = sender;
         this.recipient = recipient;
         this.timestamp = timestamp;
@@ -39,7 +42,7 @@ public class Order {
         this.items = items;
     }
 
-    public Order(String interchangeNumber, String sender, String recipient, String timestamp, String pickupTime, String deliverTime){
+    public Shipment(String interchangeNumber, String sender, String recipient, String timestamp, String pickupTime, String deliverTime){
         this.sender = sender;
         this.recipient = recipient;
         this.timestamp = timestamp;
@@ -48,7 +51,7 @@ public class Order {
         this.interchangeNumber = interchangeNumber;
     }
 
-    public Order(){
+    public Shipment(){
     }
 
     public String getInterchangeNumber() {
@@ -112,6 +115,34 @@ public class Order {
         items.put(itemName, itemAmountAndUnit);
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public boolean updateAttribute(String attribute, String attrValue){
+        if(attribute.equals("recipient")){
+            setRecipient(attrValue);
+            return true;
+        }
+        else if (attribute.equals("pickupTime")){
+            setPickupTime(attrValue);
+            return true;
+        }
+        else if (attribute.equals("deliverTime")){
+            setDeliverTime(attrValue);
+            return true;
+        }
+        else if (attribute.equals("status")){
+            setStatus(attrValue);
+            return true;
+        }
+        else return false;
+    }
+
     public String toJSONString() {
         return new JSONObject(this).toString();
     }
@@ -120,23 +151,24 @@ public class Order {
         return new JSONObject(this);
     }
 
-    public static Order fromJSONString(String json) {
-        Order order = new Order();
+    public static Shipment fromJSONString(String json) {
+        Shipment shipment = new Shipment();
 
-        order.setSender(new JSONObject(json).getString("sender"));
-        order.setRecipient(new JSONObject(json).getString("recipient"));
-        order.setTimestamp(new JSONObject(json).getString("timestamp"));
-        order.setPickupTime(new JSONObject(json).getString("pickupTime"));
-        order.setDeliverTime(new JSONObject(json).getString("deliverTime"));
-        order.setInterchangeNumber(new JSONObject(json).getString("interchangeNumber"));
+        shipment.setSender(new JSONObject(json).getString("sender"));
+        shipment.setRecipient(new JSONObject(json).getString("recipient"));
+        shipment.setTimestamp(new JSONObject(json).getString("timestamp"));
+        shipment.setPickupTime(new JSONObject(json).getString("pickupTime"));
+        shipment.setDeliverTime(new JSONObject(json).getString("deliverTime"));
+        shipment.setStatus(new JSONObject(json).getString("status"));
+        shipment.setInterchangeNumber(new JSONObject(json).getString("interchangeNumber"));
 
         String itemsString = new JSONObject(json).get("items").toString();
         HashMap<String, String> itemsMap = new Gson().fromJson(
                 itemsString, new TypeToken<HashMap<String, String>>() {}.getType()
         );
-        order.setItems(itemsMap);
+        shipment.setItems(itemsMap);
 
-        return  order;
+        return  shipment;
     }
 
 

@@ -70,8 +70,8 @@ public class Utils {
         ctx.getStub().putState(id, metaObject.toJSONString().getBytes(UTF_8));
     }
 
-    public void putState(Context ctx, String id, Order order){
-        ctx.getStub().putState(id, order.toJSONString().getBytes(UTF_8));
+    public void putState(Context ctx, String id, Shipment shipment){
+        ctx.getStub().putState(id, shipment.toJSONString().getBytes(UTF_8));
     }
 
     /**
@@ -86,8 +86,8 @@ public class Utils {
         ctx.getStub().putPrivateData(pdc, id, privateMetaObject.toJSONString().getBytes(UTF_8));
     }
 
-    public void putPrivateData(Context ctx, String pdc, String id, Order order){
-        ctx.getStub().putPrivateData(pdc, id, order.toJSONString().getBytes(UTF_8));
+    public void putPrivateData(Context ctx, String pdc, String id, Shipment shipment){
+        ctx.getStub().putPrivateData(pdc, id, shipment.toJSONString().getBytes(UTF_8));
     }
 
     /**
@@ -111,14 +111,14 @@ public class Utils {
 
     }
 
-    public Order getOrder(Context ctx, String pdc, String id){
+    public Shipment getShipment(Context ctx, String pdc, String id){
         try {
             byte[] pmoArray = ctx.getStub().getPrivateData(pdc, id);
             String pmoString = new String(pmoArray, "UTF-8");
-            return Order.fromJSONString(pmoString);
+            return Shipment.fromJSONString(pmoString);
         }
         catch (Exception e){
-            return new Order();
+            return new Shipment();
         }
     }
 
