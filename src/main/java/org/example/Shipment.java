@@ -42,13 +42,14 @@ public class Shipment {
         this.items = items;
     }
 
-    public Shipment(String interchangeNumber, String sender, String recipient, String timestamp, String pickupTime, String deliverTime){
+    public Shipment(String interchangeNumber, String sender, String recipient, String timestamp, String pickupTime, String deliverTime, String status){
         this.sender = sender;
         this.recipient = recipient;
         this.timestamp = timestamp;
         this.pickupTime = pickupTime;
         this.deliverTime = deliverTime;
         this.interchangeNumber = interchangeNumber;
+        this.status = status;
     }
 
     public Shipment(){

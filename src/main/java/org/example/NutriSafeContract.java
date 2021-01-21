@@ -670,12 +670,12 @@ public class NutriSafeContract implements ContractInterface {
     /* #endregion */
 
     @Transaction()
-    public String createShipment(Context ctx, String id, String pdc, String sender, String recipient, String pickupTime, String deliverTime) throws Exception{
+    public String createShipment(Context ctx, String id, String pdc, String sender, String recipient, String pickupTime, String deliverTime, String status) throws Exception{
 
         if (helper.privateObjectExists(ctx, id, pdc)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
 
         //String interchangeNumber = "INT_" + actualInterchangeNumber;
-        Shipment shipment = new Shipment("001", sender, recipient, ctx.getStub().getTxTimestamp().toString(), pickupTime, deliverTime);
+        Shipment shipment = new Shipment(id, sender, recipient, ctx.getStub().getTxTimestamp().toString(), pickupTime, deliverTime, status);
         //actualInterchangeNumber++;
 
         Map<String, byte[]> transientData = ctx.getStub().getTransient();
