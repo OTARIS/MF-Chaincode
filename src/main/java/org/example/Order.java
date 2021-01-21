@@ -45,6 +45,7 @@ public class Order {
         this.timestamp = timestamp;
         this.pickupTime = pickupTime;
         this.deliverTime = deliverTime;
+        this.interchangeNumber = interchangeNumber;
     }
 
     public Order(){
@@ -129,7 +130,7 @@ public class Order {
         order.setDeliverTime(new JSONObject(json).getString("deliverTime"));
         order.setInterchangeNumber(new JSONObject(json).getString("interchangeNumber"));
 
-        String itemsString = new JSONObject(json).get("intermediates").toString();
+        String itemsString = new JSONObject(json).get("items").toString();
         HashMap<String, String> itemsMap = new Gson().fromJson(
                 itemsString, new TypeToken<HashMap<String, String>>() {}.getType()
         );
