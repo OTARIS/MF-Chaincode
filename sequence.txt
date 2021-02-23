@@ -1,0 +1,1 @@
+Error: query failed with status: 404 - namespace nutrisafe-chaincode is not defined
