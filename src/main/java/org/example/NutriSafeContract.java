@@ -280,6 +280,26 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaDef.toJSON());
     }
 
+    @Transaction()
+    public String test1 (Context ctx, String[][] var){
+        return helper.createReturnValue("200", "Passt: " + var[0][0]);
+    }
+
+    @Transaction()
+    public String test2 (Context ctx, ArrayList<ArrayList<String>> var){
+        return helper.createReturnValue("200", "Passt: " + var.get(0).get(0));
+    }
+
+    @Transaction()
+    public String test3 (Context ctx, ArrayList<ArrayList<String>> var){
+        return helper.createReturnValue("200", "Passt: " + var.toString());
+    }
+
+    @Transaction()
+    public String test4 (Context ctx, ArrayList<String[]> var){
+        return helper.createReturnValue("200", "Passt: " + var.get(0)[0]);
+    }
+
 
     /* #endregion */
 
