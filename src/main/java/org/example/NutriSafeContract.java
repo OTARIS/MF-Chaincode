@@ -212,7 +212,7 @@ public class NutriSafeContract implements ContractInterface {
             metaDef = helper.getMetaDef(ctx);
         }
 
-        if (!dataType.equals("String") && !dataType.equals("Integer")) return helper.createReturnValue("400", "The data type (" +dataType+ ") must be String or Integer");
+        if (!dataType.equals("String") && !dataType.equals("Integer") && !dataType.equals("Array")) return helper.createReturnValue("400", "The data type (" +dataType+ ") must be String or Integer");
 
         metaDef.addAttributeDefinition(attribute, dataType);
         helper.putState(ctx, META_DEF_ID, metaDef);
@@ -302,7 +302,7 @@ public class NutriSafeContract implements ContractInterface {
      * @return the object
      */
     @Transaction()
-    public String createObject(Context ctx, String id, String pdc, String productName, String amount, String unit, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
+    public String createObject(Context ctx, String id, String pdc, String productName, String amount, String unit, String[] attributes, String[] attrValues, String[] arrayAttributes, String[][] arrayValues)throws UnsupportedEncodingException{
         
         if (helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
         
@@ -327,6 +327,10 @@ public class NutriSafeContract implements ContractInterface {
             
             if (metaDef.getDataTypeByAttribute(attr).equals("Integer") && !attrValues[i].matches("-?\\d+")) return helper.createReturnValue("400", "The attribute " +attr+ " is not an Integer");
         i++;
+        }
+
+        for (String attr : arrayAttributes){
+            if (!allowedAttr.contains(attr)) return helper.createReturnValue("400", "The attribute " +attr+ " is not defined");
         }
 
         i = 0;
@@ -360,7 +364,7 @@ public class NutriSafeContract implements ContractInterface {
         else setPDCTo = "";
 
         String timeStamp = ctx.getStub().getTxTimestamp().toString();
-        MetaObject metaObject = new MetaObject(setPDCTo, productName, amountDouble, unit, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
+        MetaObject metaObject = new MetaObject(setPDCTo, productName, amountDouble, unit, attributes, attrValues, arrayAttributes, arrayValues, timeStamp, ctx.getClientIdentity().getMSPID());
         metaObject.setKey(id);
         helper.putState(ctx, id, metaObject);
 
