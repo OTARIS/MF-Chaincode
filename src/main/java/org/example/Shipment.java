@@ -5,6 +5,8 @@ import com.google.gson.Gson;
 import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+
 public class Shipment {
 
     @Property
@@ -35,22 +37,22 @@ public class Shipment {
     String postage;
 
     @Property
-    String[] packagingType;
+    ArrayList<String> packagingType;
 
     @Property
-    String[] content;
+    ArrayList<String> content;
 
     @Property
-    String[] weight;
+    ArrayList<String> weight;
 
     @Property
-    String[] length;
+    ArrayList<String> length;
 
     @Property
-    String[] width;
+    ArrayList<String> width;
 
     @Property
-    String[] height;
+    ArrayList<String> height;
 
     @Property
     String status;
@@ -80,27 +82,46 @@ public class Shipment {
         this.recipientZipCode = recipientZipCode;
         this.recipientCity = recipientCity;
         this.postage = postage;
-        this.packagingType = packagingType;
-        this.content = content;
-        this.weight = weight;
-        this.length = length;
-        this.width = width;
-        this.height = height;
+
+        for (String x : packagingType){
+            this.packagingType.add(x);
+        }
+
+        for (String x : content){
+            this.content.add(x);
+        }
+
+        for (String x : weight){
+            this.weight.add(x);
+        }
+
+        for (String x : length){
+            this.length.add(x);
+        }
+
+        for (String x : width){
+            this.width.add(x);
+        }
+
+        for (String x : height){
+            this.height.add(x);
+        }
+
         this.status = status;
     }
 
     public Shipment(){
     }
 
-    public void setContent(String[] content) {
+    public void setContent(ArrayList<String> content) {
         this.content = content;
     }
 
-    public void setLength(String[] length) {
+    public void setLength(ArrayList<String>  length) {
         this.length = length;
     }
 
-    public void setPackagingType(String[] packagingType) {
+    public void setPackagingType(ArrayList<String>  packagingType) {
         this.packagingType = packagingType;
     }
 
@@ -120,7 +141,7 @@ public class Shipment {
         this.recipientName = recipientName;
     }
 
-    public void setHeight(String[] height) {
+    public void setHeight(ArrayList<String>  height) {
         this.height = height;
     }
 
@@ -144,11 +165,11 @@ public class Shipment {
         this.senderZipCode = senderZipCode;
     }
 
-    public void setWeight(String[] weight) {
+    public void setWeight(ArrayList<String>  weight) {
         this.weight = weight;
     }
 
-    public void setWidth(String[] width) {
+    public void setWidth(ArrayList<String>  width) {
         this.width = width;
     }
 
@@ -183,38 +204,38 @@ public class Shipment {
         shipment.setStatus(new JSONObject(json).getString("status"));
 
         String packagingTypeString = new JSONObject(json).get("packagingType").toString();
-        String[] packagingMap = new Gson().fromJson(
-                packagingTypeString, new TypeToken<String[]>() {}.getType()
+        ArrayList<String>  packagingMap = new Gson().fromJson(
+                packagingTypeString, new TypeToken<ArrayList<String> >() {}.getType()
         );
         shipment.setPackagingType(packagingMap);
 
         String contentString = new JSONObject(json).get("content").toString();
-        String[] contentMap = new Gson().fromJson(
-                contentString, new TypeToken<String[]>() {}.getType()
+        ArrayList<String>  contentMap = new Gson().fromJson(
+                contentString, new TypeToken<ArrayList<String> >() {}.getType()
         );
         shipment.setContent(contentMap);
 
         String weightString = new JSONObject(json).get("weight").toString();
-        String[] weightMap = new Gson().fromJson(
-                weightString, new TypeToken<String[]>() {}.getType()
+        ArrayList<String>  weightMap = new Gson().fromJson(
+                weightString, new TypeToken<ArrayList<String> >() {}.getType()
         );
         shipment.setWeight(weightMap);
 
         String lengthString = new JSONObject(json).get("length").toString();
-        String[] lengthMap = new Gson().fromJson(
-                lengthString, new TypeToken<String[]>() {}.getType()
+        ArrayList<String>  lengthMap = new Gson().fromJson(
+                lengthString, new TypeToken<ArrayList<String> >() {}.getType()
         );
         shipment.setLength(lengthMap);
 
         String widthString = new JSONObject(json).get("width").toString();
-        String[] widthMap = new Gson().fromJson(
-                widthString, new TypeToken<String[]>() {}.getType()
+        ArrayList<String>  widthMap = new Gson().fromJson(
+                widthString, new TypeToken<ArrayList<String> >() {}.getType()
         );
         shipment.setWidth(widthMap);
 
         String heightString = new JSONObject(json).get("height").toString();
-        String[] heightMap = new Gson().fromJson(
-                heightString, new TypeToken<String[]>() {}.getType()
+        ArrayList<String>  heightMap = new Gson().fromJson(
+                heightString, new TypeToken<ArrayList<String> >() {}.getType()
         );
         shipment.setHeight(heightMap);
 

@@ -301,7 +301,7 @@ public class NutriSafeContract implements ContractInterface {
                                  String[] height,
                                  String status){
 
-        if (helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
+        if (helper.privateObjectExists(ctx, id, pdc)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
 
         Shipment shipment = new Shipment(senderName, senderAddress, senderZipCode, senderCity, recipientName, recipientAddress, recipientZipCode, recipientCity, postage, packagingType, content, weight, length, width, height, status);
 
