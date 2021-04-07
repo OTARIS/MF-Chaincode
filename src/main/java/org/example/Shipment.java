@@ -5,143 +5,159 @@ import com.google.gson.Gson;
 import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
 
-import java.util.HashMap;
-
 public class Shipment {
 
     @Property
-    String interchangeNumber;
+    String senderName;
 
     @Property
-    String sender;
+    String senderAddress;
 
     @Property
-    String recipient;
+    String senderZipCode;
 
     @Property
-    String timestamp;
+    String senderCity;
 
     @Property
-    String pickupTime;
+    String recipientName;
 
     @Property
-    String deliverTime;
+    String recipientAddress;
+
+    @Property
+    String recipientZipCode;
+
+    @Property
+    String recipientCity;
+
+    @Property
+    String postage;
+
+    @Property
+    String[] packagingType;
+
+    @Property
+    String[] content;
+
+    @Property
+    String[] weight;
+
+    @Property
+    String[] length;
+
+    @Property
+    String[] width;
+
+    @Property
+    String[] height;
 
     @Property
     String status;
 
-    @Property
-    HashMap<String, String> items = new HashMap<>();
-
-    public Shipment(String sender, String recipient, String timestamp, String pickupTime, String deliverTime, HashMap<String, String> items){
-        this.sender = sender;
-        this.recipient = recipient;
-        this.timestamp = timestamp;
-        this.pickupTime = pickupTime;
-        this.deliverTime = deliverTime;
-        this.items = items;
-    }
-
-    public Shipment(String interchangeNumber, String sender, String recipient, String timestamp, String pickupTime, String deliverTime, String status){
-        this.sender = sender;
-        this.recipient = recipient;
-        this.timestamp = timestamp;
-        this.pickupTime = pickupTime;
-        this.deliverTime = deliverTime;
-        this.interchangeNumber = interchangeNumber;
+    public Shipment(String senderName,
+                    String senderAddress,
+                    String senderZipCode,
+                    String senderCity,
+                    String recipientName,
+                    String recipientAddress,
+                    String recipientZipCode,
+                    String recipientCity,
+                    String postage,
+                    String[] packagingType,
+                    String[] content,
+                    String[] weight,
+                    String[] length,
+                    String[] width,
+                    String[] height,
+                    String status){
+        this.senderName = senderName;
+        this.senderAddress = senderAddress;
+        this.senderZipCode = senderZipCode;
+        this.senderCity = senderCity;
+        this.recipientName = recipientName;
+        this.recipientAddress = recipientAddress;
+        this.recipientZipCode = recipientZipCode;
+        this.recipientCity = recipientCity;
+        this.postage = postage;
+        this.packagingType = packagingType;
+        this.content = content;
+        this.weight = weight;
+        this.length = length;
+        this.width = width;
+        this.height = height;
         this.status = status;
     }
 
     public Shipment(){
     }
 
-    public String getInterchangeNumber() {
-        return interchangeNumber;
+    public void setContent(String[] content) {
+        this.content = content;
     }
 
-    public void setInterchangeNumber(String interchangeNumber) {
-        this.interchangeNumber = interchangeNumber;
+    public void setLength(String[] length) {
+        this.length = length;
     }
 
-    public void setSender(String sender) {
-        this.sender = sender;
+    public void setPackagingType(String[] packagingType) {
+        this.packagingType = packagingType;
     }
 
-    public String getSender() {
-        return sender;
+    public void setPostage(String postage) {
+        this.postage = postage;
     }
 
-    public void setRecipient(String recipient) {
-        this.recipient = recipient;
+    public void setRecipientAddress(String recipientAddress) {
+        this.recipientAddress = recipientAddress;
     }
 
-    public String getRecipient() {
-        return recipient;
+    public void setRecipientCity(String recipientCity) {
+        this.recipientCity = recipientCity;
     }
 
-    public void setTimestamp(String timestamp) {
-        this.timestamp = timestamp;
+    public void setRecipientName(String recipientName) {
+        this.recipientName = recipientName;
     }
 
-    public String getTimestamp() {
-        return timestamp;
+    public void setHeight(String[] height) {
+        this.height = height;
     }
 
-    public void setPickupTime(String pickupTime) {
-        this.pickupTime = pickupTime;
+    public void setRecipientZipCode(String recipientZipCode) {
+        this.recipientZipCode = recipientZipCode;
     }
 
-    public String getPickupTime() {
-        return pickupTime;
+    public void setSenderAddress(String senderAddress) {
+        this.senderAddress = senderAddress;
     }
 
-    public void setDeliverTime(String deliverTime) {
-        this.deliverTime = deliverTime;
+    public void setSenderCity(String senderCity) {
+        this.senderCity = senderCity;
     }
 
-    public String getDeliverTime() {
-        return deliverTime;
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
     }
 
-
-    public void setItems(HashMap<String, String> items) {
-        this.items = items;
+    public void setSenderZipCode(String senderZipCode) {
+        this.senderZipCode = senderZipCode;
     }
 
-    public HashMap<String, String> getItems() {
-        return items;
+    public void setWeight(String[] weight) {
+        this.weight = weight;
     }
 
-    public void addItem(String itemName, String itemAmountAndUnit){
-        items.put(itemName, itemAmountAndUnit);
+    public void setWidth(String[] width) {
+        this.width = width;
     }
 
     public String getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(String status){
         this.status = status;
-    }
-
-    public boolean updateAttribute(String attribute, String attrValue){
-        if(attribute.equals("recipient")){
-            setRecipient(attrValue);
-            return true;
-        }
-        else if (attribute.equals("pickupTime")){
-            setPickupTime(attrValue);
-            return true;
-        }
-        else if (attribute.equals("deliverTime")){
-            setDeliverTime(attrValue);
-            return true;
-        }
-        else if (attribute.equals("status")){
-            setStatus(attrValue);
-            return true;
-        }
-        else return false;
     }
 
     public String toJSONString() {
@@ -155,19 +171,52 @@ public class Shipment {
     public static Shipment fromJSONString(String json) {
         Shipment shipment = new Shipment();
 
-        shipment.setSender(new JSONObject(json).getString("sender"));
-        shipment.setRecipient(new JSONObject(json).getString("recipient"));
-        shipment.setTimestamp(new JSONObject(json).getString("timestamp"));
-        shipment.setPickupTime(new JSONObject(json).getString("pickupTime"));
-        shipment.setDeliverTime(new JSONObject(json).getString("deliverTime"));
+        shipment.setSenderName(new JSONObject(json).getString("senderName"));
+        shipment.setSenderAddress(new JSONObject(json).getString("senderAddress"));
+        shipment.setSenderZipCode(new JSONObject(json).getString("senderZipCode"));
+        shipment.setSenderCity(new JSONObject(json).getString("senderCity"));
+        shipment.setRecipientName(new JSONObject(json).getString("recipientName"));
+        shipment.setRecipientAddress(new JSONObject(json).getString("recipientAddress"));
+        shipment.setRecipientZipCode(new JSONObject(json).getString("recipientZipCode"));
+        shipment.setRecipientCity(new JSONObject(json).getString("recipientCity"));
+        shipment.setPostage(new JSONObject(json).getString("postage"));
         shipment.setStatus(new JSONObject(json).getString("status"));
-        shipment.setInterchangeNumber(new JSONObject(json).getString("interchangeNumber"));
 
-        String itemsString = new JSONObject(json).get("items").toString();
-        HashMap<String, String> itemsMap = new Gson().fromJson(
-                itemsString, new TypeToken<HashMap<String, String>>() {}.getType()
+        String packagingTypeString = new JSONObject(json).get("packagingType").toString();
+        String[] packagingMap = new Gson().fromJson(
+                packagingTypeString, new TypeToken<String[]>() {}.getType()
         );
-        shipment.setItems(itemsMap);
+        shipment.setPackagingType(packagingMap);
+
+        String contentString = new JSONObject(json).get("content").toString();
+        String[] contentMap = new Gson().fromJson(
+                contentString, new TypeToken<String[]>() {}.getType()
+        );
+        shipment.setContent(contentMap);
+
+        String weightString = new JSONObject(json).get("weight").toString();
+        String[] weightMap = new Gson().fromJson(
+                weightString, new TypeToken<String[]>() {}.getType()
+        );
+        shipment.setWeight(weightMap);
+
+        String lengthString = new JSONObject(json).get("length").toString();
+        String[] lengthMap = new Gson().fromJson(
+                lengthString, new TypeToken<String[]>() {}.getType()
+        );
+        shipment.setLength(lengthMap);
+
+        String widthString = new JSONObject(json).get("width").toString();
+        String[] widthMap = new Gson().fromJson(
+                widthString, new TypeToken<String[]>() {}.getType()
+        );
+        shipment.setWidth(widthMap);
+
+        String heightString = new JSONObject(json).get("height").toString();
+        String[] heightMap = new Gson().fromJson(
+                heightString, new TypeToken<String[]>() {}.getType()
+        );
+        shipment.setHeight(heightMap);
 
         return  shipment;
     }

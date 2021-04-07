@@ -280,6 +280,63 @@ public class NutriSafeContract implements ContractInterface {
 
     /* #region META objects */
 
+    @Transaction()
+    public String createShipment(Context ctx,
+                                 String id,
+                                 String pdc,
+                                 String senderName,
+                                 String senderAddress,
+                                 String senderZipCode,
+                                 String senderCity,
+                                 String recipientName,
+                                 String recipientAddress,
+                                 String recipientZipCode,
+                                 String recipientCity,
+                                 String postage,
+                                 String[] packagingType,
+                                 String[] content,
+                                 String[] weight,
+                                 String[] length,
+                                 String[] width,
+                                 String[] height,
+                                 String status){
+
+        if (helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
+
+        Shipment shipment = new Shipment(senderName, senderAddress, senderZipCode, senderCity, recipientName, recipientAddress, recipientZipCode, recipientCity, postage, packagingType, content, weight, length, width, height, status);
+
+        helper.putPrivateData(ctx, pdc, id, shipment);
+
+        helper.emitEvent(ctx, "shipment_created", shipment.toString().getBytes());
+
+        return helper.createReturnValue("200", shipment.toJSON());
+    }
+
+    @Transaction()
+    public String readShipment(Context ctx, String id, String pdc) throws Exception{
+
+        if (!helper.privateObjectExists(ctx, id, pdc)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
+
+        Shipment shipment = helper.getShipment(ctx, pdc, id);
+
+        return helper.createReturnValue("200", shipment.toJSON());
+    }
+
+    @Transaction()
+    public String updateShipmentStatus(Context ctx, String id, String pdc, String status){
+
+        if (!helper.privateObjectExists(ctx, id, pdc)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
+
+        Shipment shipment = helper.getShipment(ctx, pdc, id);
+
+        shipment.setStatus(status);
+
+        helper.putPrivateData(ctx, pdc, id, shipment);
+
+        return helper.createReturnValue("200", shipment.toJSON());
+
+    }
+
     /**
      * Creates a new object (Pass transient data, to create private attribute ("attribute":"value"))
      *
