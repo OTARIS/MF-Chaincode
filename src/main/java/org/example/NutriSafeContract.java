@@ -13,15 +13,11 @@ import org.hyperledger.fabric.contract.annotation.Contact;
 import org.hyperledger.fabric.contract.annotation.Info;
 import org.hyperledger.fabric.contract.annotation.License;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.nio.charset.StandardCharsets;
 
 /**
- * The main contract 
+ * The main contract
  */
 
 @Contract(name = "NutriSafeContract",
@@ -35,8 +31,6 @@ import java.nio.charset.StandardCharsets;
 
 @Default
 public class NutriSafeContract implements ContractInterface {
-
-    int actualInterchangeNumber = 1;
 
     /**
      * The id where to find the MetaDef object
@@ -69,7 +63,7 @@ public class NutriSafeContract implements ContractInterface {
      * Query the local state database (Couch DB query indexes)
      *
      * @param ctx the hyperledger context object
-     * @param queryString the query string 
+     * @param queryString the query string
      * @return a list of all objects that fulfill the condition
      */
     @Transaction
@@ -195,7 +189,7 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaDef.toString());
     }
     /**
-     * Adds an attribute to the meta def 
+     * Adds an attribute to the meta def
      * If no meta def exists, it will be created
      *
      * @param ctx the hyperledger context object
@@ -214,7 +208,7 @@ public class NutriSafeContract implements ContractInterface {
             metaDef = helper.getMetaDef(ctx);
         }
 
-        if (!dataType.equals("String") && !dataType.equals("Integer")) return helper.createReturnValue("400", "The data type (" +dataType+ ") must be String or Integer");
+        if (!dataType.equals("String") && !dataType.equals("Integer") && !dataType.equals("Array")) return helper.createReturnValue("400", "The data type (" +dataType+ ") must be String or Integer");
 
         metaDef.addAttributeDefinition(attribute, dataType);
         helper.putState(ctx, META_DEF_ID, metaDef);
@@ -224,11 +218,11 @@ public class NutriSafeContract implements ContractInterface {
     }
 
     /**
-     * Adds a product to the meta def 
+     * Adds a product to the meta def
      * If no meta def exists, it will be created
      *
      * @param ctx the hyperledger context object
-     * @param productName the name of the new product 
+     * @param productName the name of the new product
      * @param attributes the attributes of the new product
      *
      * @return the meta def
@@ -282,7 +276,6 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", metaDef.toJSON());
     }
 
-
     /* #endregion */
 
     /* #region META objects */
@@ -304,7 +297,7 @@ public class NutriSafeContract implements ContractInterface {
      * @return the object
      */
     @Transaction()
-    public String createObject(Context ctx, String id, String pdc, String productName, String amount, String unit, String[] attributes, String[] attrValues)throws UnsupportedEncodingException{
+    public String createObject(Context ctx, String id, String pdc, String productName, String amount, String unit, String[] attributes, String[] attrValues, String[] arrayAttributes, String arrayValues)throws UnsupportedEncodingException{
 
         if (helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
 
@@ -329,6 +322,10 @@ public class NutriSafeContract implements ContractInterface {
 
             if (metaDef.getDataTypeByAttribute(attr).equals("Integer") && !attrValues[i].matches("-?\\d+")) return helper.createReturnValue("400", "The attribute " +attr+ " is not an Integer");
             i++;
+        }
+
+        for (String attr : arrayAttributes){
+            if (!allowedAttr.contains(attr)) return helper.createReturnValue("400", "The attribute " +attr+ " is not defined");
         }
 
         i = 0;
@@ -361,8 +358,25 @@ public class NutriSafeContract implements ContractInterface {
         }
         else setPDCTo = "";
 
+        String pass = arrayValues;
+        pass = pass.substring(1, pass.length() - 2);
+        String[] split = pass.split("],");
+        for (int x = 0; x < split.length; x++){
+            split[x] = split[x].substring(1);
+        }
+
+        HashMap<String, ArrayList<String>> result = new HashMap<>();
+
+        for (int x = 0; x < arrayAttributes.length; x++){
+            String[] seperated = split[x].split(",");
+            ArrayList<String> toAdd = new ArrayList<>(Arrays.asList(seperated));
+            result.put(arrayAttributes[x], toAdd);
+
+        }
+
+
         String timeStamp = ctx.getStub().getTxTimestamp().toString();
-        MetaObject metaObject = new MetaObject(setPDCTo, productName, amountDouble, unit, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
+        MetaObject metaObject = new MetaObject(setPDCTo, productName, amountDouble, unit, attributes, attrValues, result, timeStamp, ctx.getClientIdentity().getMSPID());
         metaObject.setKey(id);
         helper.putState(ctx, id, metaObject);
 
@@ -571,6 +585,33 @@ public class NutriSafeContract implements ContractInterface {
         return helper.createReturnValue("200", privateMetaObject.toJSON());
     }
 
+    @Transaction()
+    public String updateArray(Context ctx, String id, String arrayName, String value, String operation){
+
+        if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
+        MetaObject metaObject = helper.getMetaObject(ctx, id);
+        if (operation.equals("ADD")){
+            metaObject.addValueToAttributeArray(arrayName, value);
+        }
+        else if (operation.equals("DELETE")){
+            metaObject.deleteValueFromAttributeArray(arrayName, value);
+        }
+        else if (operation.equals("DELETE_ALL")){
+            metaObject.deleteAllValuesFromAttributeArray(arrayName);
+        }
+        else if (operation.equals("ADD_NEW")){
+            metaObject.addNewArray(arrayName, value);
+        }
+        else {
+            return helper.createReturnValue("400", "The operation  " +operation+ " is not defined (Allowed: ADD, DELETE, ADD_NEW, DELETE_ALL");
+        }
+        helper.putState(ctx, id, metaObject);
+
+        return helper.createReturnValue("200", metaObject.toJSON());
+
+    }
+
+
     /* #endregion */
 
     /* #region alarm handling */
@@ -651,10 +692,10 @@ public class NutriSafeContract implements ContractInterface {
         if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
 
         MetaObject metaObject = helper.getMetaObject(ctx, id);
-       
+
         if (!metaObject.getAlarmFlag() == true) return helper.createReturnValue("400", "The alarm flag for " +id+  "is set to false");
-        
-        
+
+
         if (metaObject.getPrivateDataCollection().length() > 2){
             PrivateMetaObject privateMetaObject = helper.getPrivateMetaObject(ctx, metaObject.getPrivateDataCollection(), id + PDC_STRING);
             metaObject.addAllAttributes(privateMetaObject.getAttributes());
@@ -663,63 +704,10 @@ public class NutriSafeContract implements ContractInterface {
         metaObject.setPrivateDataCollection("");
         helper.putPrivateData(ctx, AUTHORITY_PDC, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toString());       
+        return helper.createReturnValue("200", metaObject.toString());
     }
     */
 
     /* #endregion */
-
-    @Transaction()
-    public String createShipment(Context ctx, String id, String pdc, String sender, String recipient, String pickupTime, String deliverTime, String status) throws Exception{
-
-        if (helper.privateObjectExists(ctx, id, pdc)) return helper.createReturnValue("400", "The object with the key " +id+ " already exists");
-
-        //String interchangeNumber = "INT_" + actualInterchangeNumber;
-        Shipment shipment = new Shipment(id, sender, recipient, ctx.getStub().getTxTimestamp().toString(), pickupTime, deliverTime, status);
-        //actualInterchangeNumber++;
-
-        Map<String, byte[]> transientData = ctx.getStub().getTransient();
-        if (transientData.size() == 0) return helper.createReturnValue("400", "No transient data passed");
-
-        for (Map.Entry<String, byte[]> entry : transientData.entrySet()){
-
-            shipment.addItem(entry.getKey(), new String(entry.getValue(), "UTF-8"));
-
-        }
-        helper.emitEvent(ctx, "shipment_created", shipment.toString().getBytes());
-        helper.putPrivateData(ctx, pdc, id, shipment);
-
-        return helper.createReturnValue("200", shipment.toJSON());
-    }
-
-    @Transaction()
-    public String readShipment(Context ctx, String id, String pdc) throws Exception{
-
-        if (!helper.privateObjectExists(ctx, id, pdc)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
-
-        Shipment shipment = helper.getShipment(ctx, pdc, id);
-
-        return helper.createReturnValue("200", shipment.toJSON());
-    }
-
-    @Transaction()
-    public String updateShipment(Context ctx, String id, String pdc, String attribute, String attrValue){
-
-        if (!helper.privateObjectExists(ctx, id, pdc)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
-
-        Shipment shipment = helper.getShipment(ctx, pdc, id);
-
-        if (shipment.updateAttribute(attribute, attrValue)){
-            helper.emitEvent(ctx, "shipment_updated", shipment.toString().getBytes());
-            return helper.createReturnValue("200", shipment.toJSON());
-        }
-        else {
-            return helper.createReturnValue("400", "You cant update this attribute");
-        }
-
-
-    }
-
-
 }
 

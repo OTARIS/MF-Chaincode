@@ -43,7 +43,7 @@ public class MetaDef {
         unitList = new ArrayList<>();
     }
 
-    /** 
+    /**
      * @return the list of defined units
      */
     public ArrayList<String> getUnitList(){
@@ -73,7 +73,7 @@ public class MetaDef {
 
     /**
      * @param attribute get data type for this attribute
-     * 
+     *
      * @return the data typ for the specified attribute
      */
     public String getDataTypeByAttribute(String attribute){
@@ -97,7 +97,7 @@ public class MetaDef {
 
     /**
      * @param attribute the attribute to check
-     * 
+     *
      * @return true if the attribute exits
      */
     public boolean attributeExists(String attribute){
@@ -113,7 +113,7 @@ public class MetaDef {
 
     /**
      * @param productName get attributes of this product
-     * 
+     *
      * @return the attributes of the specified product
      */
     public List<String> getAttributesByProductName(String productName) {
@@ -141,7 +141,7 @@ public class MetaDef {
 
     /**
      * @param productName the product to check
-     * 
+     *
      * @return true if the product exists
      */
     public boolean productNameExists(String productName){
@@ -170,9 +170,9 @@ public class MetaDef {
     }
     /**
      * Converts the json string of this object back to a MetaDef
-     * 
+     *
      * @param json the json String of the object to decrypt
-     * 
+     *
      * @return the decrypted object
      */
     public static MetaDef fromJSONString(String json){
@@ -180,22 +180,22 @@ public class MetaDef {
 
         String productString = new JSONObject(json).get("productNameToAttributesMap").toString();
         HashMap<String, List<String>> productMap = new Gson().fromJson(
-            productString, new TypeToken<HashMap<String, List<String>>>() {}.getType()
+                productString, new TypeToken<HashMap<String, List<String>>>() {}.getType()
         );
         metaDef.setProductNameToAttributesMap(productMap);
 
         String attributeString = new JSONObject(json).get("attributeToDataTypeMap").toString();
         HashMap<String, String> attributeMap = new Gson().fromJson(
-            attributeString, new TypeToken<HashMap<String, String>>() {}.getType()
+                attributeString, new TypeToken<HashMap<String, String>>() {}.getType()
         );
         metaDef.setAttributeToDataTypeMap(attributeMap);
 
         String unitString = new JSONObject(json).get("unitList").toString();
         ArrayList<String> unitList = new Gson().fromJson(
-            unitString, new TypeToken<ArrayList<String>>() {}.getType()
+                unitString, new TypeToken<ArrayList<String>>() {}.getType()
         );
         metaDef.setUnitList(unitList);
 
-        return metaDef;     
-    }   
+        return metaDef;
+    }
 }

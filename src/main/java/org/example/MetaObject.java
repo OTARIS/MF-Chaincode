@@ -1,6 +1,7 @@
 package org.example;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
@@ -73,7 +74,7 @@ public class MetaObject {
      * The list of keys of all successors of this object
      */
     @Property()
-    HashMap<String, String> successor = new HashMap<>();  
+    HashMap<String, String> successor = new HashMap<>();
 
     /**
      * The list of timestamp and all owners of this object
@@ -87,6 +88,9 @@ public class MetaObject {
     @Property()
     HashMap<String, String> attributes = new HashMap<>();
 
+    @Property()
+    HashMap<String, ArrayList<String>> attributeArrays = new HashMap<>();
+
     /**
      * Empty class constructor
      */
@@ -95,7 +99,7 @@ public class MetaObject {
 
     /**
      * Class constructor
-     * 
+     *
      * @param pdc the private data collection where to store the private data (empty if no private data necessary)
      * @param productName the product name of this objects (defined in the MetaDef)
      * @param amount the initial amount of this object
@@ -105,7 +109,7 @@ public class MetaObject {
      * @param timeStamp the time of the creation (auto generated)
      * @param owner the initial owner of this object
      */
-    public MetaObject(String pdc, String productName, double amount, String unit, String[] attrNames, String[] attrValues, String timeStamp, String owner){
+    public MetaObject(String pdc, String productName, double amount, String unit, String[] attrNames, String[] attrValues, HashMap<String, ArrayList<String>> attributeArrays, String timeStamp, String owner){
         this.productName = productName;
         if (!pdc.equals("") && !pdc.equals("null")){
             this.privateDataCollection.add(pdc);
@@ -113,6 +117,8 @@ public class MetaObject {
         for (int i = 0; i < attrNames.length; i++){
             attributes.put(attrNames[i], attrValues[i]);
         }
+
+        this.attributeArrays = attributeArrays;
         tsAndOwner.put(timeStamp, owner);
         actualOwner = owner;
         this.unit = unit;
@@ -264,7 +270,7 @@ public class MetaObject {
      * @param message the message corresponding to the predecessor (How much was processed)
      */
     public void addPredecessor(String predecessor, String message){
-            this.predecessor.put(predecessor, message);
+        this.predecessor.put(predecessor, message);
     }
 
     /**
@@ -286,7 +292,7 @@ public class MetaObject {
      * @param message the message corresponding to the predecessor (How much was processed)
      */
     public void addSuccessor(String successor, String message){
-            this.successor.put(successor, message);     
+        this.successor.put(successor, message);
     }
 
     /**
@@ -347,6 +353,32 @@ public class MetaObject {
         attributes.remove(attrName);
     }
 
+    public HashMap<String, ArrayList<String>> getAttributeArrays() {
+        return attributeArrays;
+    }
+
+    public void setAttributeArrays(HashMap<String, ArrayList<String>> attributeArrays) {
+        this.attributeArrays = attributeArrays;
+    }
+
+    public void addValueToAttributeArray(String array, String value){
+        attributeArrays.get(array).add(value);
+    }
+
+    public void deleteValueFromAttributeArray(String array, String value){
+        attributeArrays.get(array).remove(value);
+    }
+
+    public void deleteAllValuesFromAttributeArray(String array){
+        attributeArrays.get(array).clear();
+    }
+
+    public void addNewArray(String array, String value){
+        ArrayList<String> values = new ArrayList<>();
+        values.add(value);
+        attributeArrays.put(array, values);
+    }
+
     /**
      * @return the object as a json string
      */
@@ -357,7 +389,7 @@ public class MetaObject {
     /**
      * @return the object as a json string
      */
-    public String toJSONString() {      
+    public String toJSONString() {
         Gson gson = new Gson();
         return gson.toJson(this);
     }
@@ -371,9 +403,9 @@ public class MetaObject {
 
     /**
      * Converts the json string of this object back to a MetaDef
-     * 
+     *
      * @param json the json String of the object to decrypt
-     * 
+     *
      * @return the decrypted object
      */
     public static MetaObject fromJSONString(String json) {
@@ -400,7 +432,7 @@ public class MetaObject {
 
         String pdcString = new JSONObject(json).get("privateDataCollection").toString();
         ArrayList<String> pdcMap = new Gson().fromJson(
-            pdcString, new TypeToken<ArrayList<String>>() {}.getType()
+                pdcString, new TypeToken<ArrayList<String>>() {}.getType()
         );
         metaObject.setPrivateDataCollection(pdcMap);
 
@@ -409,25 +441,31 @@ public class MetaObject {
 
         String predecessorString = new JSONObject(json).get("predecessor").toString();
         HashMap<String, String> predecessorMap = new Gson().fromJson(
-            predecessorString, new TypeToken<HashMap<String, String>>() {}.getType()
+                predecessorString, new TypeToken<HashMap<String, String>>() {}.getType()
         );
         metaObject.setPredecessor(predecessorMap);
 
         String successorString = new JSONObject(json).get("successor").toString();
         HashMap<String, String> successorMap = new Gson().fromJson(
-            successorString, new TypeToken<HashMap<String, String>>() {}.getType()
+                successorString, new TypeToken<HashMap<String, String>>() {}.getType()
         );
         metaObject.setSuccessor(successorMap);
-       
+
         String attributesString = new JSONObject(json).get("attributes").toString();
         HashMap<String, String> attributesMap = new Gson().fromJson(
-            attributesString, new TypeToken<HashMap<String, String>>() {}.getType()
+                attributesString, new TypeToken<HashMap<String, String>>() {}.getType()
         );
         metaObject.setAttributes(attributesMap);
 
+        String arrayAttributesString = new JSONObject(json).get("attributeArrays").toString();
+        HashMap<String, ArrayList<String>> arrayAttributesMap = new Gson().fromJson(
+                arrayAttributesString, new TypeToken<HashMap<String, ArrayList<String>>>() {}.getType()
+        );
+        metaObject.setAttributeArrays(arrayAttributesMap);
+
         String tsAndOwnerString = new JSONObject(json).get("tsAndOwner").toString();
         HashMap<String, String> tsAndOwnerMap = new Gson().fromJson(
-            tsAndOwnerString, new TypeToken<HashMap<String, String>>() {}.getType()
+                tsAndOwnerString, new TypeToken<HashMap<String, String>>() {}.getType()
         );
         metaObject.setTsAndOwner(tsAndOwnerMap);
 
