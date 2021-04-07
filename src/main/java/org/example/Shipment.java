@@ -6,6 +6,7 @@ import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Shipment {
 
@@ -40,19 +41,19 @@ public class Shipment {
     ArrayList<String> packagingType;
 
     @Property
-    ArrayList<String> content;
+    ArrayList<String> content = new ArrayList<>();
 
     @Property
-    ArrayList<String> weight;
+    ArrayList<String> weight = new ArrayList<>();
 
     @Property
-    ArrayList<String> length;
+    ArrayList<String> length = new ArrayList<>();
 
     @Property
-    ArrayList<String> width;
+    ArrayList<String> width = new ArrayList<>();
 
     @Property
-    ArrayList<String> height;
+    ArrayList<String> height = new ArrayList<>();
 
     @Property
     String status;
