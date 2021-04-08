@@ -6,39 +6,37 @@ import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 
 public class Shipment {
 
     @Property
-    String senderName;
+    String senderName = "1";
 
     @Property
-    String senderAddress;
+    String senderAddress = "2";
 
     @Property
-    String senderZipCode;
+    String senderZipCode = "3";
 
     @Property
-    String senderCity;
+    String senderCity = "4";
 
     @Property
-    String recipientName;
+    String recipientName = "5";
 
     @Property
-    String recipientAddress;
+    String recipientAddress = "6";
 
     @Property
-    String recipientZipCode;
+    String recipientZipCode = "";
 
     @Property
-    String recipientCity;
+    String recipientCity = "8";
+
 
     @Property
-    String postage;
-
-    @Property
-    ArrayList<String> packagingType;
+    ArrayList<String> packagingType = new ArrayList<>();
 
     @Property
     ArrayList<String> content = new ArrayList<>();
@@ -56,7 +54,10 @@ public class Shipment {
     ArrayList<String> height = new ArrayList<>();
 
     @Property
-    String status;
+    String postage = "10";
+
+    @Property
+    String status = "";
 
     public Shipment(String senderName,
                     String senderAddress,
@@ -66,13 +67,13 @@ public class Shipment {
                     String recipientAddress,
                     String recipientZipCode,
                     String recipientCity,
-                    String postage,
                     String[] packagingType,
                     String[] content,
                     String[] weight,
                     String[] length,
                     String[] width,
                     String[] height,
+                    String postage,
                     String status){
         this.senderName = senderName;
         this.senderAddress = senderAddress;
@@ -82,32 +83,16 @@ public class Shipment {
         this.recipientAddress = recipientAddress;
         this.recipientZipCode = recipientZipCode;
         this.recipientCity = recipientCity;
+
+        this.packagingType = new ArrayList<>(Arrays.asList(packagingType));
+        this.content = new ArrayList<>(Arrays.asList(content));
+        this.weight = new ArrayList<>(Arrays.asList(weight));
+        this.width = new ArrayList<>(Arrays.asList(width));
+        this.length = new ArrayList<>(Arrays.asList(length));
+        this.height = new ArrayList<>(Arrays.asList(height));
+
+
         this.postage = postage;
-
-        for (String x : packagingType){
-            this.packagingType.add(x);
-        }
-
-        for (String x : content){
-            this.content.add(x);
-        }
-
-        for (String x : weight){
-            this.weight.add(x);
-        }
-
-        for (String x : length){
-            this.length.add(x);
-        }
-
-        for (String x : width){
-            this.width.add(x);
-        }
-
-        for (String x : height){
-            this.height.add(x);
-        }
-
         this.status = status;
     }
 
@@ -182,8 +167,20 @@ public class Shipment {
         this.status = status;
     }
 
+    public String toTestString() {
+
+        String test = senderName + senderAddress + recipientAddress;
+        return test;
+
+    }
+
+    public String toString(){
+        return toJSONString();
+    }
+
     public String toJSONString() {
-        return new JSONObject(this).toString();
+        Gson gson = new Gson();
+        return gson.toJson(this);
     }
 
     public JSONObject toJSON() {
