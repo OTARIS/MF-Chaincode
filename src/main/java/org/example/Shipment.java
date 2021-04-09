@@ -4,7 +4,6 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -165,13 +164,6 @@ public class Shipment {
 
     public void setStatus(String status){
         this.status = status;
-    }
-
-    public String toTestString() {
-
-        String test = senderName + senderAddress + recipientAddress;
-        return test;
-
     }
 
     public String toString(){
