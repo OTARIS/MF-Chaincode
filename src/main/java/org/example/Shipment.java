@@ -176,7 +176,9 @@ public class Shipment {
     }
 
     public JSONObject toJSON() {
-        return new JSONObject(this);
+        Gson gson = new Gson();
+        String a = gson.toJson(this);
+        return new JSONObject(a);
     }
 
     public static Shipment fromJSONString(String json) {
