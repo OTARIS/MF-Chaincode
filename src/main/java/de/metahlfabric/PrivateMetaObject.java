@@ -1,11 +1,12 @@
-package org.example;
+package de.metahlfabric;
 
-import java.util.HashMap;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import org.hyperledger.fabric.contract.annotation.DataType;
 import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
+
+import java.util.HashMap;
 
 /**
  * A PrivateMetaObject is linked to a MetaObject and stores the private information
