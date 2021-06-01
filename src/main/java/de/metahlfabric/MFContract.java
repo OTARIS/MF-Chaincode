@@ -199,7 +199,13 @@ public class MFContract implements ContractInterface {
 
         MetaDef metaDef = helper.getMetaDef(ctx);
 
-        return helper.createReturnValue("200", metaDef.toJSON());
+        List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributesByAssetName(product);
+
+        if(attributeDefinitions == null)
+            return helper.createReturnValue("400", "Product does not exist");
+
+        return helper.createReturnValue("200",
+                new Gson().toJson(attributeDefinitions));
     }
 
     /**
