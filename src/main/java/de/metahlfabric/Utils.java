@@ -1,11 +1,13 @@
-package org.example;
+package de.metahlfabric;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import com.google.gson.Gson;
 import org.hyperledger.fabric.contract.Context;
 import org.json.JSONObject;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
- * Helper class for the NutriSafeContract
+ * Helper class for the MFContract
  */
 
 public class Utils {
@@ -95,7 +97,7 @@ public class Utils {
         try {
             byte[] pmoArray = ctx.getStub().getPrivateData(pdc, id);
             String pmoString = new String(pmoArray, "UTF-8"); 
-            return PrivateMetaObject.fromJSONString(pmoString); 
+            return new Gson().fromJson(pmoString, PrivateMetaObject.class);
         }
         catch (Exception e){
             return new PrivateMetaObject();
@@ -109,7 +111,7 @@ public class Utils {
      * @return the MetaDef object
      */
     public MetaDef getMetaDef(Context ctx){
-        return MetaDef.fromJSONString(new String(ctx.getStub().getState(NutriSafeContract.META_DEF_ID)));
+        return new Gson().fromJson(new String(ctx.getStub().getState(MFContract.META_DEF_ID)), MetaDef.class);
     }
 
     /**
@@ -119,7 +121,7 @@ public class Utils {
      * @return the MetaObject
      */
     public MetaObject getMetaObject(Context ctx, String id){
-        return MetaObject.fromJSONString(new String(ctx.getStub().getState(id)));
+        return new Gson().fromJson(new String(ctx.getStub().getState(id)), MetaObject.class);
     }
 
     /**

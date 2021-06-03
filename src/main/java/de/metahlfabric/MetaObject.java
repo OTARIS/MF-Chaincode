@@ -1,12 +1,13 @@
-package org.example;
+package de.metahlfabric;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import org.hyperledger.fabric.contract.annotation.DataType;
 import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * A MetaObject is a generic definition of the object stored in the blockchain
@@ -44,6 +45,9 @@ public class MetaObject {
      */
     @Property()
     String productName = "";
+
+    @Property
+    Integer productVersion = 1;
 
     /**
      * The receiver of this object
@@ -105,8 +109,9 @@ public class MetaObject {
      * @param timeStamp the time of the creation (auto generated)
      * @param owner the initial owner of this object
      */
-    public MetaObject(String pdc, String productName, double amount, String unit, String[] attrNames, String[] attrValues, String timeStamp, String owner){
+    public MetaObject(String pdc, String productName, Integer productVersion, double amount, String unit, String[] attrNames, String[] attrValues, String timeStamp, String owner){
         this.productName = productName;
+        this.productVersion = productVersion;
         if (!pdc.equals("") && !pdc.equals("null")){
             this.privateDataCollection.add(pdc);
         }
@@ -194,6 +199,14 @@ public class MetaObject {
      */
     public void setProductName(String productName) {
         this.productName = productName;
+    }
+
+    public Integer getProductVersion() {
+        return this.productVersion;
+    }
+
+    public void setProductVersion(Integer version) {
+        this.productVersion = version;
     }
 
     /**
@@ -394,6 +407,9 @@ public class MetaObject {
 
         String name = new JSONObject(json).getString("productName");
         metaObject.setProductName(name);
+
+        Integer version = new JSONObject(json).getInt("productVersion");
+        metaObject.setProductVersion(version);
 
         String rec = new JSONObject(json).getString("receiver");
         metaObject.setReceiver(rec);
