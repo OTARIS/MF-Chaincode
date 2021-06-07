@@ -1,5 +1,6 @@
 package de.metahlfabric;
 
+import com.google.gson.Gson;
 import org.hyperledger.fabric.contract.annotation.DataType;
 import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
@@ -91,6 +92,18 @@ public class MetaDef {
         for (AttributeDefinition attributeDefinition : this.attributeDefinitions)
             if (attributeDefinition.getName().equalsIgnoreCase(attribute)) {
                 attributeDefinition.setDataType(dataType);
+                for(AssetDefinition assetDefinition : this.assetDefinitions) {
+                    for(AttributeDefinition oldAttributeDefinition : assetDefinition.getAttributes()) {
+                        if(oldAttributeDefinition.getName().equalsIgnoreCase(attribute)) {
+                            try {
+                                assetDefinition.removeAttribute(oldAttributeDefinition);
+                                assetDefinition.addAttribute(attributeDefinition);
+                            } catch (AttributeNotFoundException e) {
+                                // no harm was done
+                            }
+                        }
+                    }
+                }
                 return;
             }
         this.attributeDefinitions.add(new AttributeDefinition(attribute, dataType));
@@ -140,14 +153,30 @@ public class MetaDef {
      * @param assetName  the product to add
      * @param attributes the attributes to add
      */
-    public void addAssetDefinition(String assetName, List<AttributeDefinition> attributes) {
+    public void addAssetDefinition(String assetName, List<String> attributes) {
         for (AssetDefinition assetDefinition : this.assetDefinitions) {
             if (assetDefinition.getName().equalsIgnoreCase(assetName)) {
                 // Asset already exists!
+                List<AttributeDefinition> existingAttributes = assetDefinition.getAttributes();
+                for(AttributeDefinition existingAttribute : existingAttributes) {
+                    if(!attributes.contains(existingAttribute.getName())) {
+                        try {
+                            assetDefinition.removeAttribute(existingAttribute);
+                        } catch (AttributeNotFoundException e) {
+                            // no harm
+                        }
+                    } else {
+                        attributes.remove(existingAttribute.getName());
+                    }
+                }
+                for(AttributeDefinition attributeDefinition : this.attributeDefinitions) {
+                    if(attributes.contains(attributeDefinition.getName())) {
+                        assetDefinition.addAttribute(attributeDefinition);
+                    }
+                }
                 return;
             }
         }
-
         this.assetDefinitions.add(new AssetDefinition(assetName, attributeDefinitions));
     }
 
@@ -177,14 +206,14 @@ public class MetaDef {
      * @return the object as a json string
      */
     public String toJSONString() {
-        return new JSONObject(this).toString();
+        return new Gson().toJson(this);
     }
 
     /**
      * @return the json object
      */
     public JSONObject toJSON() {
-        return new JSONObject(this);
+        return new JSONObject(this.toJSONString());
     }
 
     @DataType

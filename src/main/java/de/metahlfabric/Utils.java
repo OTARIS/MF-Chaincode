@@ -126,7 +126,10 @@ public class Utils {
      * @return the MetaDef object
      */
     public MetaDef getMetaDef(Context ctx){
-        return new Gson().fromJson(new String(ctx.getStub().getState(MFContract.META_DEF_ID)), MetaDef.class);
+        if(!objectExists(ctx, MFContract.META_DEF_ID))
+            return new MetaDef();
+        else
+            return new Gson().fromJson(new String(ctx.getStub().getState(MFContract.META_DEF_ID)), MetaDef.class);
     }
 
     /**

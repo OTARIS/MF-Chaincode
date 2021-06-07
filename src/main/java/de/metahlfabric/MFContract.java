@@ -174,7 +174,6 @@ public class MFContract implements ContractInterface {
      */
     @Transaction()
     public String META_getAttributesOfProductWithVersion(Context ctx, String product, String version) {
-
         if (!helper.objectExists(ctx, META_DEF_ID))
             return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID + " does not exist");
         int versionNumber;
@@ -300,11 +299,11 @@ public class MFContract implements ContractInterface {
         }
 
         HashSet<String> attributesSet = Arrays.stream(attributes).collect(Collectors.toCollection(HashSet::new));
-        List<MetaDef.AttributeDefinition> acceptedAttributes = new ArrayList<>();
+        List<String> acceptedAttributes = new ArrayList<>();
         List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributeList();
         for (MetaDef.AttributeDefinition attributeDefinition : attributeDefinitions) {
             if (attributesSet.contains(attributeDefinition.getName())) {
-                acceptedAttributes.add(attributeDefinition);
+                acceptedAttributes.add(attributeDefinition.getName());
                 attributesSet.remove(attributeDefinition.getName());
             }
         }
@@ -630,16 +629,18 @@ public class MFContract implements ContractInterface {
         List<MetaDef.AttributeDefinition> allowedAttr = metaDef.getAttributesByAssetNameAndVersion(metaObject.getProductName(),
                 metaObject.getProductVersion());
 
-        for (MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
-            if (attributeList.contains(attributeDefinition.getName())) {
-                int index = attributeList.indexOf(attributeDefinition.getName());
-                if (attributeDefinition.getDataType().equals("Integer")
-                        && !attributeValues.get(index).matches("-?\\d+"))
-                    return helper.createReturnValue("400", "The attribute "
-                            + attributeDefinition.getName() + " is not an Integer");
-                metaObject.addAttribute(attributeDefinition.getName(), attributeValues.get(index));
-                attributeValues.remove(index);
-                attributeList.remove(attributeDefinition.getName());
+        if(allowedAttr != null) {
+            for (MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
+                if (attributeList.contains(attributeDefinition.getName())) {
+                    int index = attributeList.indexOf(attributeDefinition.getName());
+                    if (attributeDefinition.getDataType().equals("Integer")
+                            && !attributeValues.get(index).matches("-?\\d+"))
+                        return helper.createReturnValue("400", "The attribute "
+                                + attributeDefinition.getName() + " is not an Integer");
+                    metaObject.addAttribute(attributeDefinition.getName(), attributeValues.get(index));
+                    attributeValues.remove(index);
+                    attributeList.remove(attributeDefinition.getName());
+                }
             }
         }
         if (attributeList.size() > 0) {

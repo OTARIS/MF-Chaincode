@@ -385,16 +385,15 @@ public class MetaObject {
     /**
      * @return the object as a json string
      */
-    public String toJSONString() {      
-        Gson gson = new Gson();
-        return gson.toJson(this);
+    public String toJSONString() {
+        return new Gson().toJson(this);
     }
 
     /**
      * @return the json object
      */
     public JSONObject toJSON() {
-        return new JSONObject(this);
+        return new JSONObject(this.toJSONString());
     }
 
     /**
