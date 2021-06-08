@@ -419,42 +419,44 @@ public class MFContract implements ContractInterface {
         }
 
         Set<String> privateAttributes = transientData.keySet();
-        List<String> attributesArray = Arrays.asList(attributes);
-        List<String> attributesValues = Arrays.asList(attrValues);
+        List<String> attributeNames = Arrays.asList(attributes);
+        List<String> attributeValues = Arrays.asList(attrValues);
         List<MetaDef.AttributeDefinition> allowedAttr = productDefinition.getAttributes();
         List<MetaDef.AttributeDefinition> acceptedAttr = new ArrayList<>();
-        for (MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
-            if (attributesArray.contains(attributeDefinition.getName())) {
-                int index = attributesArray.indexOf(attributeDefinition.getName());
-                if (attributeDefinition.getDataType().equals("Integer")
-                        && !attributesValues.get(index).matches("-?\\d+"))
+        for (MetaDef.AttributeDefinition allowedDefinition : allowedAttr) {
+            if (attributeNames.contains(allowedDefinition.getName())) {
+                int index = attributeNames.indexOf(allowedDefinition.getName());
+                if(index < 0)
+                    continue;
+                if (allowedDefinition.getDataType().equalsIgnoreCase("Integer")
+                        && !attributeValues.get(index).matches("-?\\d+"))
                     return helper.createReturnValue("400", "The attribute "
-                            + attributeDefinition.getName() + " is not an Integer");
-                acceptedAttr.add(attributeDefinition);
-                attributesValues.remove(index);
-                attributesArray.remove(attributeDefinition.getName());
-            } else if (isPdc && privateAttributes.contains(attributeDefinition.getName())) {
-                String value = new String(transientData.get(attributeDefinition.getName()), StandardCharsets.UTF_8);
-                if (attributeDefinition.getDataType().equals("Integer")
+                            + allowedDefinition.getName() + " is not an Integer");
+                acceptedAttr.add(allowedDefinition);
+                attributeValues.remove(index);
+                attributeNames.remove(index);
+            } else if (isPdc && privateAttributes.contains(allowedDefinition.getName())) {
+                String value = new String(transientData.get(allowedDefinition.getName()), StandardCharsets.UTF_8);
+                if (allowedDefinition.getDataType().equalsIgnoreCase("Integer")
                         && !value.matches("-?\\d+"))
                     return helper.createReturnValue("400", "The attribute "
-                            + attributeDefinition.getName() + " is not an Integer");
+                            + allowedDefinition.getName() + " is not an Integer");
                 if (privateMetaObject == null)
                     privateMetaObject = new PrivateMetaObject();
-                privateMetaObject.addAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(), value);
-                privateAttributes.remove(attributeDefinition.getName());
+                privateMetaObject.addAttribute(allowedDefinition.getName(), allowedDefinition.getVersion(), value);
+                privateAttributes.remove(allowedDefinition.getName());
             }
         }
-        if (attributesArray.size() > 0) {
-            if (attributesArray.size() == 1)
+        if (attributeNames.size() > 0) {
+            if (attributeNames.size() == 1)
                 return helper.createReturnValue("400", "The attribute "
-                        + attributesArray.get(0) + " is not defined");
+                        + attributeNames.get(0) + " is not defined");
             else {
                 StringBuilder result = new StringBuilder("The attributes ");
-                result.append(attributesArray.get(0));
-                for (int i = 1; i < attributesArray.size(); i++) {
+                result.append(attributeNames.get(0));
+                for (int i = 1; i < attributeNames.size(); i++) {
                     result.append(", ");
-                    result.append(attributesArray.get(i));
+                    result.append(attributeNames.get(i));
                 }
                 result.append(" are not defined");
                 return helper.createReturnValue("400", result.toString());
@@ -467,7 +469,7 @@ public class MFContract implements ContractInterface {
                         + privateAttributesArray[0] + " is not defined");
             else {
                 StringBuilder result = new StringBuilder("The attributes ");
-                result.append(attributesArray.get(0));
+                result.append(attributeNames.get(0));
                 for (int i = 1; i < privateAttributesArray.length; i++) {
                     result.append(", ");
                     result.append(privateAttributesArray[i]);
