@@ -170,7 +170,7 @@ public class MetaDef {
                         attributeNames.remove(existingAttribute.getName());
                     }
                 }
-                for(AttributeDefinition attributeDefinition : this.attributeDefinitions) {
+                for(AttributeDefinition attributeDefinition : attributes) {
                     if(attributeNames.contains(attributeDefinition.getName())) {
                         assetDefinition.addAttribute(attributeDefinition);
                     }
