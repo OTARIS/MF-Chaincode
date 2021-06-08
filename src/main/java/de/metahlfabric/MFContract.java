@@ -1,6 +1,7 @@
 package de.metahlfabric;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.hyperledger.fabric.contract.Context;
 import org.hyperledger.fabric.contract.ContractInterface;
 import org.hyperledger.fabric.contract.annotation.*;
@@ -90,7 +91,9 @@ public class MFContract implements ContractInterface {
         while (it.hasNext()) {
             jsonArray.put(new String(it.next().getValue(), StandardCharsets.UTF_8));
         }
-        return helper.createReturnValue("200", jsonArray);
+        JSONObject response = new JSONObject();
+        response.put("result", jsonArray);
+        return helper.createReturnValue("200", response);
     }
 
     /**
@@ -320,7 +323,7 @@ public class MFContract implements ContractInterface {
                     result.append(attributesSetArray[i]);
                 }
                 result.append(" are not defined");
-                return helper.createReturnValue("400", result);
+                return helper.createReturnValue("400", result.toString());
             }
         }
 
@@ -452,7 +455,7 @@ public class MFContract implements ContractInterface {
                     result.append(attributesArray.get(i));
                 }
                 result.append(" are not defined");
-                return helper.createReturnValue("400", result);
+                return helper.createReturnValue("400", result.toString());
             }
         }
         if (privateAttributes.size() > 0) {
@@ -468,7 +471,7 @@ public class MFContract implements ContractInterface {
                     result.append(privateAttributesArray[i]);
                 }
                 result.append(" are not defined");
-                return helper.createReturnValue("400", result);
+                return helper.createReturnValue("400", result.toString());
             }
         }
 
@@ -658,7 +661,7 @@ public class MFContract implements ContractInterface {
                     result.append(attributeList.get(i));
                 }
                 result.append(" are not defined");
-                return helper.createReturnValue("400", result);
+                return helper.createReturnValue("400", result.toString());
             }
         }
 

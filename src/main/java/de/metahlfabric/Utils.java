@@ -1,6 +1,8 @@
 package de.metahlfabric;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.hyperledger.fabric.contract.Context;
 import org.json.JSONObject;
 
@@ -35,10 +37,19 @@ public class Utils {
      * 
      * @return the return message as json string
      */
-    String createReturnValue(String statusCode, Object message){
+    String createReturnValue(String statusCode, JSONObject message){
         JSONObject response = new JSONObject();
         response.put("status", statusCode);
         response.put("response", message);
+        return response.toString();
+    }
+
+    String createReturnValue(String statusCode, String message){
+        JSONObject responseValue = new JSONObject();
+        responseValue.put("message", message);
+        JSONObject response = new JSONObject();
+        response.put("status", statusCode);
+        response.put("response", responseValue);
         return response.toString();
     }
 
