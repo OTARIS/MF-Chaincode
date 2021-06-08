@@ -417,6 +417,7 @@ public class MFContract implements ContractInterface {
         List<String> attributesArray = Arrays.asList(attributes);
         List<String> attributesValues = Arrays.asList(attrValues);
         List<MetaDef.AttributeDefinition> allowedAttr = productDefinition.getAttributes();
+        List<MetaDef.AttributeDefinition> acceptedAttr = new ArrayList<>();
         for (MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
             if (attributesArray.contains(attributeDefinition.getName())) {
                 int index = attributesArray.indexOf(attributeDefinition.getName());
@@ -424,6 +425,7 @@ public class MFContract implements ContractInterface {
                         && !attributesValues.get(index).matches("-?\\d+"))
                     return helper.createReturnValue("400", "The attribute "
                             + attributeDefinition.getName() + " is not an Integer");
+                acceptedAttr.add(attributeDefinition);
                 attributesValues.remove(index);
                 attributesArray.remove(attributeDefinition.getName());
             } else if (isPdc && privateAttributes.contains(attributeDefinition.getName())) {
@@ -434,7 +436,7 @@ public class MFContract implements ContractInterface {
                             + attributeDefinition.getName() + " is not an Integer");
                 if (privateMetaObject == null)
                     privateMetaObject = new PrivateMetaObject();
-                privateMetaObject.addAttribute(attributeDefinition.getName(), value);
+                privateMetaObject.addAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(), value);
                 privateAttributes.remove(attributeDefinition.getName());
             }
         }
@@ -478,7 +480,7 @@ public class MFContract implements ContractInterface {
             helper.putPrivateData(ctx, pdc, id + PDC_STRING, privateMetaObject);
 
         String timeStamp = ctx.getStub().getTxTimestamp().toString();
-        MetaObject metaObject = new MetaObject(isPdc ? pdc : "", productDefinition.getName(), productDefinition.getVersion(), amountDouble, unit, attributes, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
+        MetaObject metaObject = new MetaObject(isPdc ? pdc : "", productDefinition.getName(), productDefinition.getVersion(), amountDouble, unit, acceptedAttr, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
         metaObject.setKey(id);
         helper.putState(ctx, id, metaObject);
 
@@ -500,14 +502,14 @@ public class MFContract implements ContractInterface {
 
         MetaObject metaObject = helper.getMetaObject(ctx, id);
 
-        HashMap<String, String> pdcMap = new HashMap<>();
+        ArrayList<MetaAttribute> pdcList = new ArrayList<>();
 
         for (String pdc : metaObject.getPrivateDataCollection()) {
             PrivateMetaObject privateMetaObject = helper.getPrivateMetaObject(ctx, pdc, id + PDC_STRING);
-            pdcMap.putAll(privateMetaObject.getAttributes());
+            pdcList.addAll(privateMetaObject.getAttributes());
         }
         JSONObject returnValue = metaObject.toJSON();
-        returnValue.put("privateData", new JSONObject(pdcMap));
+        returnValue.put("privateData", new JSONObject(pdcList));
 
         return helper.createReturnValue("200", returnValue);
     }
@@ -637,7 +639,8 @@ public class MFContract implements ContractInterface {
                             && !attributeValues.get(index).matches("-?\\d+"))
                         return helper.createReturnValue("400", "The attribute "
                                 + attributeDefinition.getName() + " is not an Integer");
-                    metaObject.addAttribute(attributeDefinition.getName(), attributeValues.get(index));
+                    metaObject.addAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(),
+                            attributeValues.get(index));
                     attributeValues.remove(index);
                     attributeList.remove(attributeDefinition.getName());
                 }
@@ -705,7 +708,7 @@ public class MFContract implements ContractInterface {
                             + attributeDefinition.getName() + " is not an Integer");
                 if (privateMetaObject == null)
                     privateMetaObject = new PrivateMetaObject();
-                privateMetaObject.addAttribute(attributeDefinition.getName(), value);
+                privateMetaObject.addAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(), value);
                 privateAttributes.remove(attributeDefinition.getName());
             }
         }
@@ -741,12 +744,12 @@ public class MFContract implements ContractInterface {
         metaObject.setAlarmFlag(true);
         helper.putState(ctx, id, metaObject);
 
-        HashMap<String, String> successors = metaObject.getSuccessor();
+        ArrayList<MetaObject.Tuple<String, String>> successors = metaObject.getSuccessor();
 
-        for (String suc : successors.keySet()) {
-            MetaObject sucMetaObject = helper.getMetaObject(ctx, suc);
+        for (MetaObject.Tuple<String, String> suc : successors) {
+            MetaObject sucMetaObject = helper.getMetaObject(ctx, suc.x);
             sucMetaObject.setAlarmFlag(true);
-            helper.putState(ctx, suc, metaObject);
+            helper.putState(ctx, suc.x, metaObject);
         }
         helper.emitEvent(ctx, "alarm_activated", metaObject.toString().getBytes());
 
@@ -772,12 +775,12 @@ public class MFContract implements ContractInterface {
         metaObject.setAlarmFlag(false);
         helper.putState(ctx, id, metaObject);
 
-        HashMap<String, String> successors = metaObject.getSuccessor();
+        ArrayList<MetaObject.Tuple<String, String>> successors = metaObject.getSuccessor();
 
-        for (String suc : successors.keySet()) {
-            MetaObject sucMetaObject = helper.getMetaObject(ctx, suc);
+        for (MetaObject.Tuple<String, String> suc : successors) {
+            MetaObject sucMetaObject = helper.getMetaObject(ctx, suc.x);
             sucMetaObject.setAlarmFlag(false);
-            helper.putState(ctx, suc, metaObject);
+            helper.putState(ctx, suc.x, metaObject);
         }
 
         return helper.createReturnValue("200", metaObject.toString());

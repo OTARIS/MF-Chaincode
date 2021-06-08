@@ -2,12 +2,14 @@ package de.metahlfabric;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import de.metahlfabric.MetaDef.AttributeDefinition;
 import org.hyperledger.fabric.contract.annotation.DataType;
 import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * A MetaObject is a generic definition of the objects/assets stored in the blockchain.
@@ -86,25 +88,25 @@ public class MetaObject {
      * The list of keys of all predecessors of this object
      */
     @Property()
-    HashMap<String, String> predecessor = new HashMap<>();
+    ArrayList<Tuple<String, String>> predecessor = new ArrayList<>();
 
     /**
      * The list of keys of all successors of this object
      */
     @Property()
-    HashMap<String, String> successor = new HashMap<>();  
+    ArrayList<Tuple<String, String>> successor = new ArrayList<>();
 
     /**
      * The list of timestamp and all owners of this object
      */
     @Property()
-    HashMap<String, String> tsAndOwner = new HashMap<>();
+    ArrayList<Tuple<String, String>> tsAndOwner = new ArrayList<>();
 
     /**
      * The list of attributes defined in this object
      */
     @Property()
-    HashMap<String, String> attributes = new HashMap<>();
+    ArrayList<MetaAttribute> attributes = new ArrayList<>();
 
     /**
      * Empty class constructor
@@ -119,21 +121,23 @@ public class MetaObject {
      * @param productName the product name of this objects (defined in the MetaDef)
      * @param amount the initial amount of this object
      * @param unit the unit definition of this object
-     * @param attrNames the names of all attributes (defined in the MetaDef)
+     * @param attributeDefinitions the definitions of all attributes (defined in the MetaDef)
      * @param attrValues the values of this object corresponding the attribute names
      * @param timeStamp the time of the creation (auto generated)
      * @param owner the initial owner of this object
      */
-    public MetaObject(String pdc, String productName, Integer productVersion, double amount, String unit, String[] attrNames, String[] attrValues, String timeStamp, String owner){
+    public MetaObject(String pdc, String productName, Integer productVersion, double amount, String unit, List<AttributeDefinition> attributeDefinitions, String[] attrValues, String timeStamp, String owner){
         this.productName = productName;
         this.productVersion = productVersion;
         if (!pdc.equals("") && !pdc.equals("null")){
             this.privateDataCollection.add(pdc);
         }
-        for (int i = 0; i < attrNames.length; i++){
-            attributes.put(attrNames[i], attrValues[i]);
+        int i = 0;
+        for (AttributeDefinition attributeDefinition : attributeDefinitions){
+            attributes.add(new MetaAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(), attrValues[i]));
+            i++;
         }
-        tsAndOwner.put(timeStamp, owner);
+        tsAndOwner.add(new Tuple<>(timeStamp, owner));
         actualOwner = owner;
         this.unit = unit;
         this.amount = amount;
@@ -276,15 +280,8 @@ public class MetaObject {
     /**
      * @return the map of predecessors
      */
-    public HashMap<String, String> getPredecessor() {
+    public ArrayList<Tuple<String, String>> getPredecessor() {
         return predecessor;
-    }
-
-    /**
-     * @param predecessor the map of predecessors to set
-     */
-    public void setPredecessor(HashMap<String, String> predecessor) {
-        this.predecessor = predecessor;
     }
 
     /**
@@ -292,21 +289,14 @@ public class MetaObject {
      * @param message the message corresponding to the predecessor (How much was processed)
      */
     public void addPredecessor(String predecessor, String message){
-            this.predecessor.put(predecessor, message);
+            this.predecessor.add(new Tuple<>(predecessor, message));
     }
 
     /**
      * @return the map of successors
      */
-    public HashMap<String, String> getSuccessor() {
+    public ArrayList<Tuple<String, String>> getSuccessor() {
         return successor;
-    }
-
-    /**
-     * @param successor the map of successors to set
-     */
-    public void setSuccessor(HashMap<String, String>successor) {
-        this.successor = successor;
     }
 
     /**
@@ -314,21 +304,14 @@ public class MetaObject {
      * @param message the message corresponding to the predecessor (How much was processed)
      */
     public void addSuccessor(String successor, String message){
-            this.successor.put(successor, message);     
+            this.successor.add(new Tuple<>(successor, message));
     }
 
     /**
      * @return the map of timestamp and owner
      */
-    public HashMap<String, String> getTsAndOwner(){
+    public ArrayList<Tuple<String, String>> getTsAndOwner(){
         return tsAndOwner;
-    }
-
-    /**
-     * @param owner the map of owners to set
-     */
-    public void setTsAndOwner(HashMap<String, String> owner){
-        tsAndOwner = owner;
     }
 
     /**
@@ -336,43 +319,35 @@ public class MetaObject {
      * @param owner the owner corresponding to the timestamp
      */
     public void addTsAndOwner(String timeStamp, String owner){
-        tsAndOwner.put(timeStamp, owner);
+        tsAndOwner.add(new Tuple(timeStamp, owner));
     }
 
     /**
      * @return the map of attributes names and attribute values
      */
-    public HashMap<String, String> getAttributes() {
+    public ArrayList<MetaAttribute> getAttributes() {
         return attributes;
-    }
-
-    /**
-     * @param attr the map of attributes to set
-     */
-    public void setAttributes(HashMap<String, String> attr) {
-        attributes = attr;
     }
 
     /**
      * @param attrName the attribute name to add
      * @param attrValue the attribute value to add
      */
-    public void addAttribute(String attrName, String attrValue) {
-        attributes.put(attrName, attrValue);
-    }
-
-    /**
-     * @param map the map of all attributes to add
-     */
-    public void addAllAttributes(HashMap<String, String> map) {
-        attributes.putAll(map);
+    public void addAttribute(String attrName, int version, String attrValue) {
+        this.deleteAttribute(attrName);
+        attributes.add(new MetaAttribute(attrName, version, attrValue));
     }
 
     /**
      * @param attrName the attribute to delete
      */
     public void deleteAttribute(String attrName) {
-        attributes.remove(attrName);
+        for(MetaAttribute attribute : this.attributes) {
+            if(attribute.name.equalsIgnoreCase(attrName)) {
+                attributes.remove(attribute);
+                return;
+            }
+        }
     }
 
     /**
@@ -396,71 +371,23 @@ public class MetaObject {
         return new JSONObject(this.toJSONString());
     }
 
-    /**
-     * Converts the json string of this object back to a MetaDef
-     * 
-     * @param json the json String of the object to decrypt
-     * 
-     * @return the decrypted object
-     */
-    public static MetaObject fromJSONString(String json) {
+    @DataType
+    class Tuple<X, Y> {
 
-        MetaObject metaObject = new MetaObject();
+        @Property
+        public final X x;
+        @Property
+        public final Y y;
 
-        String key = new JSONObject(json).getString("key");
-        metaObject.setKey(key);
+        public Tuple(X x, Y y) {
+            this.x = x;
+            this.y = y;
+        }
 
-        double amount = new JSONObject(json).getInt("amount");
-        metaObject.setAmount(amount);
-
-        String unit = new JSONObject(json).getString("unit");
-        metaObject.setUnit(unit);
-
-        boolean alarm = new JSONObject(json).getBoolean("alarmFlag");
-        metaObject.setAlarmFlag(alarm);
-
-        String name = new JSONObject(json).getString("productName");
-        metaObject.setProductName(name);
-
-        Integer version = new JSONObject(json).getInt("productVersion");
-        metaObject.setProductVersion(version);
-
-        String rec = new JSONObject(json).getString("receiver");
-        metaObject.setReceiver(rec);
-
-        String pdcString = new JSONObject(json).get("privateDataCollection").toString();
-        ArrayList<String> pdcMap = new Gson().fromJson(
-            pdcString, new TypeToken<ArrayList<String>>() {}.getType()
-        );
-        metaObject.setPrivateDataCollection(pdcMap);
-
-        String owner = new JSONObject(json).getString("actualOwner");
-        metaObject.setActualOwner(owner);
-
-        String predecessorString = new JSONObject(json).get("predecessor").toString();
-        HashMap<String, String> predecessorMap = new Gson().fromJson(
-            predecessorString, new TypeToken<HashMap<String, String>>() {}.getType()
-        );
-        metaObject.setPredecessor(predecessorMap);
-
-        String successorString = new JSONObject(json).get("successor").toString();
-        HashMap<String, String> successorMap = new Gson().fromJson(
-            successorString, new TypeToken<HashMap<String, String>>() {}.getType()
-        );
-        metaObject.setSuccessor(successorMap);
-       
-        String attributesString = new JSONObject(json).get("attributes").toString();
-        HashMap<String, String> attributesMap = new Gson().fromJson(
-            attributesString, new TypeToken<HashMap<String, String>>() {}.getType()
-        );
-        metaObject.setAttributes(attributesMap);
-
-        String tsAndOwnerString = new JSONObject(json).get("tsAndOwner").toString();
-        HashMap<String, String> tsAndOwnerMap = new Gson().fromJson(
-            tsAndOwnerString, new TypeToken<HashMap<String, String>>() {}.getType()
-        );
-        metaObject.setTsAndOwner(tsAndOwnerMap);
-
-        return metaObject;
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof Tuple && ((Tuple) obj).x.equals(this.x) && ((Tuple) obj).y.equals(this.y));
+        }
     }
+
 }
