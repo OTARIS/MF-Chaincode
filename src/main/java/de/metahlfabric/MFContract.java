@@ -302,11 +302,13 @@ public class MFContract implements ContractInterface {
         }
 
         HashSet<String> attributesSet = Arrays.stream(attributes).collect(Collectors.toCollection(HashSet::new));
-        List<String> acceptedAttributes = new ArrayList<>();
+        ArrayList<String> acceptedAttributeNames = new ArrayList<>();
+        ArrayList<MetaDef.AttributeDefinition> acceptedAttributes = new ArrayList<>();
         List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributeList();
         for (MetaDef.AttributeDefinition attributeDefinition : attributeDefinitions) {
             if (attributesSet.contains(attributeDefinition.getName())) {
-                acceptedAttributes.add(attributeDefinition.getName());
+                acceptedAttributes.add(attributeDefinition);
+                acceptedAttributeNames.add(attributeDefinition.getName());
                 attributesSet.remove(attributeDefinition.getName());
             }
         }
@@ -327,7 +329,7 @@ public class MFContract implements ContractInterface {
             }
         }
 
-        metaDef.addAssetDefinition(productName, acceptedAttributes);
+        metaDef.addAssetDefinition(productName, acceptedAttributeNames, acceptedAttributes);
         helper.putState(ctx, META_DEF_ID, metaDef);
 
         return helper.createReturnValue("200", metaDef.toJSON());
@@ -760,10 +762,10 @@ public class MFContract implements ContractInterface {
     }
 
     /**
-     * Dectivates the alarm (All successors will be informed)
+     * Deactivates the alarm (All successors will be informed)
      *
-     * @param ctx
-     * @param id
+     * @param the hyperledger context object
+     *      * @param id  the id of the object
      * @return the object
      */
     @Transaction()
@@ -788,6 +790,7 @@ public class MFContract implements ContractInterface {
 
         return helper.createReturnValue("200", metaObject.toString());
     }
+    /*
     /**
      * Exports the information of an alarm object to the auth collection
      *

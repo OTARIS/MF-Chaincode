@@ -319,7 +319,7 @@ public class MetaObject {
      * @param owner the owner corresponding to the timestamp
      */
     public void addTsAndOwner(String timeStamp, String owner){
-        tsAndOwner.add(new Tuple(timeStamp, owner));
+        tsAndOwner.add(new Tuple<>(timeStamp, owner));
     }
 
     /**

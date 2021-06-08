@@ -153,31 +153,33 @@ public class MetaDef {
      * @param assetName  the product to add
      * @param attributes the attributes to add
      */
-    public void addAssetDefinition(String assetName, List<String> attributes) {
+    public void addAssetDefinition(String assetName, ArrayList<String> attributeNames,
+                                   ArrayList<AttributeDefinition> attributes) {
         for (AssetDefinition assetDefinition : this.assetDefinitions) {
             if (assetDefinition.getName().equalsIgnoreCase(assetName)) {
                 // Asset already exists!
                 List<AttributeDefinition> existingAttributes = assetDefinition.getAttributes();
                 for(AttributeDefinition existingAttribute : existingAttributes) {
-                    if(!attributes.contains(existingAttribute.getName())) {
+                    if(!attributeNames.contains(existingAttribute.getName())) {
                         try {
                             assetDefinition.removeAttribute(existingAttribute);
                         } catch (AttributeNotFoundException e) {
                             // no harm
                         }
                     } else {
-                        attributes.remove(existingAttribute.getName());
+                        attributeNames.remove(existingAttribute.getName());
                     }
                 }
                 for(AttributeDefinition attributeDefinition : this.attributeDefinitions) {
-                    if(attributes.contains(attributeDefinition.getName())) {
+                    if(attributeNames.contains(attributeDefinition.getName())) {
                         assetDefinition.addAttribute(attributeDefinition);
                     }
                 }
                 return;
             }
         }
-        this.assetDefinitions.add(new AssetDefinition(assetName, attributeDefinitions));
+
+        this.assetDefinitions.add(new AssetDefinition(assetName, attributes));
     }
 
     public boolean deleteAssetDefinition(String assetName) {
