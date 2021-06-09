@@ -298,7 +298,7 @@ public class MetaDef {
             ArrayList<AttributeDefinition> attributeDefinitionsOfVersion = new ArrayList<>();
             attributeDefinitionsOfVersion.addAll(this.attributes);
 
-            for (int i = this.version - 1; i >= version; i--) {
+            for (int i = this.version - 2; i >= version - 1; i--) {
                 AttributeChange attributeChange = this.changeHistory.get(i);
                 if (attributeChange.type.equals(ChangeType.ADD))
                     attributeDefinitionsOfVersion.remove(attributeChange.attribute);

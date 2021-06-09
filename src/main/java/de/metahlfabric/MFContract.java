@@ -105,8 +105,13 @@ public class MFContract implements ContractInterface {
     @Transaction
     public String objectExists(Context ctx, String id) {
         byte[] buffer = ctx.getStub().getState(id);
-        if (buffer != null && buffer.length > 0) return helper.createReturnValue("200", "true");
-        else return helper.createReturnValue("200", "false");
+        JSONObject response = new JSONObject();
+        if (buffer != null && buffer.length > 0) {
+            response.put("objectExists", "true");
+        } else {
+            response.put("objectExists", "false");
+        }
+        return helper.createReturnValue("200", response);
     }
 
     /**
@@ -120,8 +125,13 @@ public class MFContract implements ContractInterface {
     @Transaction()
     public String privateObjectExists(Context ctx, String id, String pdc) {
         byte[] buffer = ctx.getStub().getPrivateDataHash(pdc, id);
-        if (buffer != null && buffer.length > 0) return helper.createReturnValue("200", "true");
-        else return helper.createReturnValue("200", "false");
+        JSONObject response = new JSONObject();
+        if (buffer != null && buffer.length > 0) {
+            response.put("objectExists", "true");
+        } else {
+            response.put("objectExists", "false");
+        }
+        return helper.createReturnValue("200", response);
     }
 
     /**
@@ -197,7 +207,7 @@ public class MFContract implements ContractInterface {
         }
 
         return helper.createReturnValue("200",
-                new Gson().toJson(attributeDefinitions));
+                new JSONObject(new Gson().toJson(attributeDefinitions)));
     }
 
     /**
@@ -214,13 +224,14 @@ public class MFContract implements ContractInterface {
 
         MetaDef metaDef = helper.getMetaDef(ctx);
 
-        List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributesByAssetName(product);
+        List<MetaDef.AssetDefinition> assetDefinitions = metaDef.getAssetDefinitions();
+        for(MetaDef.AssetDefinition assetDefinition : assetDefinitions) {
+            if(assetDefinition.getName().equalsIgnoreCase(product))
+                return helper.createReturnValue("200",
+                        new JSONObject(new Gson().toJson(assetDefinition)));
+        }
+        return helper.createReturnValue("400", "Product does not exist");
 
-        if (attributeDefinitions == null)
-            return helper.createReturnValue("400", "Product does not exist");
-
-        return helper.createReturnValue("200",
-                new Gson().toJson(attributeDefinitions));
     }
 
     /**
@@ -792,7 +803,7 @@ public class MFContract implements ContractInterface {
             helper.putState(ctx, suc.x, metaObject);
         }
 
-        return helper.createReturnValue("200", metaObject.toString());
+        return helper.createReturnValue("200", metaObject.toJSON());
     }
     /*
     /**
