@@ -122,7 +122,7 @@ public class Utils {
     public PrivateMetaObject getPrivateMetaObject(Context ctx, String pdc, String id){     
         try {
             byte[] pmoArray = ctx.getStub().getPrivateData(pdc, id);
-            String pmoString = new String(pmoArray, "UTF-8"); 
+            String pmoString = new String(pmoArray, UTF_8);
             return new Gson().fromJson(pmoString, PrivateMetaObject.class);
         }
         catch (Exception e){
@@ -140,7 +140,7 @@ public class Utils {
         if(!objectExists(ctx, MFContract.META_DEF_ID))
             return new MetaDef();
         else
-            return new Gson().fromJson(new String(ctx.getStub().getState(MFContract.META_DEF_ID)), MetaDef.class);
+            return new Gson().fromJson(new String(ctx.getStub().getState(MFContract.META_DEF_ID), UTF_8), MetaDef.class);
     }
 
     /**
@@ -150,7 +150,7 @@ public class Utils {
      * @return the MetaObject
      */
     public MetaObject getMetaObject(Context ctx, String id){
-        return new Gson().fromJson(new String(ctx.getStub().getState(id)), MetaObject.class);
+        return new Gson().fromJson(new String(ctx.getStub().getState(id), UTF_8), MetaObject.class);
     }
 
     /**

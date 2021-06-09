@@ -766,8 +766,8 @@ public class MFContract implements ContractInterface {
     /**
      * Deactivates the alarm (All successors will be informed)
      *
-     * @param the hyperledger context object
-     *      * @param id  the id of the object
+     * @param ctx the hyperledger context object
+     * @param id  the id of the object
      * @return the object
      */
     @Transaction()
