@@ -205,8 +205,9 @@ public class MFContract implements ContractInterface {
             else
                 return helper.createReturnValue("400", "Version does not exist");
         }
-        return helper.createReturnValue("200",
-                new JSONObject(new Gson().toJson(attributeDefinitions)));
+        JSONObject result = new JSONObject();
+        result.put("attributes", new JSONArray(new Gson().toJson(attributeDefinitions)));
+        return helper.createReturnValue("200", result);
     }
 
     /**
