@@ -158,7 +158,7 @@ public class MetaDef {
         for (AssetDefinition assetDefinition : this.assetDefinitions) {
             if (assetDefinition.getName().equalsIgnoreCase(assetName)) {
                 // Asset already exists!
-                List<AttributeDefinition> existingAttributes = assetDefinition.getAttributes();
+                List<AttributeDefinition> existingAttributes = new ArrayList<>(assetDefinition.getAttributes());
                 for (AttributeDefinition existingAttribute : existingAttributes) {
                     if (!attributeNames.contains(existingAttribute.getName())) {
                         try {
