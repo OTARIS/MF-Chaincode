@@ -458,7 +458,9 @@ public class MFContract implements ContractInterface {
                     privateMetaObject = new PrivateMetaObject();
                 privateMetaObject.addAttribute(allowedDefinition.getName(), allowedDefinition.getVersion(), value);
                 privateAttributes.remove(allowedDefinition.getName());
-            }
+            } else
+                return helper.createReturnValue("400", "The attribute "
+                        + allowedDefinition.getName() + " is missing");
         }
         if (attributeNames.size() > 0) {
             if (attributeNames.size() == 1)
