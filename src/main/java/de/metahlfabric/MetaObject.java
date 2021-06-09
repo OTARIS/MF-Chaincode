@@ -1,6 +1,5 @@
 package de.metahlfabric;
 
-import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import de.metahlfabric.MetaDef.AttributeDefinition;
 import org.hyperledger.fabric.contract.annotation.DataType;
@@ -8,22 +7,21 @@ import org.hyperledger.fabric.contract.annotation.Property;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
  * A MetaObject is a generic definition of the objects/assets stored in the blockchain.
  *
  * @author Tobias Wagner, Dennis Lamken
- *
+ * <p>
  * Copyright 2021 OTARIS Interactive Services GmbH
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -111,29 +109,29 @@ public class MetaObject {
     /**
      * Empty class constructor
      */
-    public MetaObject(){
+    public MetaObject() {
     }
 
     /**
      * Class constructor
-     * 
-     * @param pdc the private data collection where to store the private data (empty if no private data necessary)
-     * @param productName the product name of this objects (defined in the MetaDef)
-     * @param amount the initial amount of this object
-     * @param unit the unit definition of this object
+     *
+     * @param pdc                  the private data collection where to store the private data (empty if no private data necessary)
+     * @param productName          the product name of this objects (defined in the MetaDef)
+     * @param amount               the initial amount of this object
+     * @param unit                 the unit definition of this object
      * @param attributeDefinitions the definitions of all attributes (defined in the MetaDef)
-     * @param attrValues the values of this object corresponding the attribute names
-     * @param timeStamp the time of the creation (auto generated)
-     * @param owner the initial owner of this object
+     * @param attrValues           the values of this object corresponding the attribute names
+     * @param timeStamp            the time of the creation (auto generated)
+     * @param owner                the initial owner of this object
      */
-    public MetaObject(String pdc, String productName, Integer productVersion, double amount, String unit, List<AttributeDefinition> attributeDefinitions, String[] attrValues, String timeStamp, String owner){
+    public MetaObject(String pdc, String productName, Integer productVersion, double amount, String unit, List<AttributeDefinition> attributeDefinitions, String[] attrValues, String timeStamp, String owner) {
         this.productName = productName;
         this.productVersion = productVersion;
-        if (!pdc.equals("") && !pdc.equals("null")){
+        if (!pdc.equals("") && !pdc.equals("null")) {
             this.privateDataCollection.add(pdc);
         }
         int i = 0;
-        for (AttributeDefinition attributeDefinition : attributeDefinitions){
+        for (AttributeDefinition attributeDefinition : attributeDefinitions) {
             attributes.add(new MetaAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(), attrValues[i]));
             i++;
         }
@@ -146,49 +144,49 @@ public class MetaObject {
     /**
      * @param key the key to set
      */
-    public void setKey(String key){
+    public void setKey(String key) {
         this.key = key;
     }
 
     /**
      * @return the key where to find the object
      */
-    public String getKey(){
+    public String getKey() {
         return key;
     }
 
     /**
      * @param amount the amount to set
      */
-    public void setAmount(double amount){
+    public void setAmount(double amount) {
         this.amount = amount;
     }
 
     /**
      * @return the actual amount
      */
-    public double getAmount(){
+    public double getAmount() {
         return amount;
     }
 
     /**
      * @param amount the amount to add
      */
-    public void addAmount(double amount){
+    public void addAmount(double amount) {
         this.amount += amount;
     }
 
     /**
      * @param unit the unit to set
      */
-    public void setUnit(String unit){
+    public void setUnit(String unit) {
         this.unit = unit;
     }
 
     /**
      * @return the unit definition
      */
-    public String getUnit(){
+    public String getUnit() {
         return unit;
     }
 
@@ -202,7 +200,7 @@ public class MetaObject {
     /**
      * @param alarmFlag the alarm flag to set
      */
-    public void setAlarmFlag(boolean alarmFlag){
+    public void setAlarmFlag(boolean alarmFlag) {
         this.alarmFlag = alarmFlag;
     }
 
@@ -266,14 +264,14 @@ public class MetaObject {
     /**
      * @return the actual owner
      */
-    public String getActualOwner(){
+    public String getActualOwner() {
         return actualOwner;
     }
 
     /**
      * @param owner the actual owner to set
      */
-    public void setActualOwner(String owner){
+    public void setActualOwner(String owner) {
         actualOwner = owner;
     }
 
@@ -286,10 +284,10 @@ public class MetaObject {
 
     /**
      * @param predecessor the predecessor to add
-     * @param message the message corresponding to the predecessor (How much was processed)
+     * @param message     the message corresponding to the predecessor (How much was processed)
      */
-    public void addPredecessor(String predecessor, String message){
-            this.predecessor.add(new Tuple<>(predecessor, message));
+    public void addPredecessor(String predecessor, String message) {
+        this.predecessor.add(new Tuple<>(predecessor, message));
     }
 
     /**
@@ -301,24 +299,24 @@ public class MetaObject {
 
     /**
      * @param successor the successor to add
-     * @param message the message corresponding to the predecessor (How much was processed)
+     * @param message   the message corresponding to the predecessor (How much was processed)
      */
-    public void addSuccessor(String successor, String message){
-            this.successor.add(new Tuple<>(successor, message));
+    public void addSuccessor(String successor, String message) {
+        this.successor.add(new Tuple<>(successor, message));
     }
 
     /**
      * @return the map of timestamp and owner
      */
-    public ArrayList<Tuple<String, String>> getTsAndOwner(){
+    public ArrayList<Tuple<String, String>> getTsAndOwner() {
         return tsAndOwner;
     }
 
     /**
      * @param timeStamp the timestamp to add
-     * @param owner the owner corresponding to the timestamp
+     * @param owner     the owner corresponding to the timestamp
      */
-    public void addTsAndOwner(String timeStamp, String owner){
+    public void addTsAndOwner(String timeStamp, String owner) {
         tsAndOwner.add(new Tuple<>(timeStamp, owner));
     }
 
@@ -330,7 +328,7 @@ public class MetaObject {
     }
 
     /**
-     * @param attrName the attribute name to add
+     * @param attrName  the attribute name to add
      * @param attrValue the attribute value to add
      */
     public void addAttribute(String attrName, int version, String attrValue) {
@@ -342,8 +340,8 @@ public class MetaObject {
      * @param attrName the attribute to delete
      */
     public void deleteAttribute(String attrName) {
-        for(MetaAttribute attribute : this.attributes) {
-            if(attribute.name.equalsIgnoreCase(attrName)) {
+        for (MetaAttribute attribute : this.attributes) {
+            if (attribute.name.equalsIgnoreCase(attrName)) {
                 attributes.remove(attribute);
                 return;
             }
@@ -353,7 +351,7 @@ public class MetaObject {
     /**
      * @return the object as a json string
      */
-    public String toString(){
+    public String toString() {
         return toJSONString();
     }
 

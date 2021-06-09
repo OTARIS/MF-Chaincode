@@ -1,7 +1,6 @@
 package de.metahlfabric;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import org.hyperledger.fabric.contract.Context;
 import org.hyperledger.fabric.contract.ContractInterface;
 import org.hyperledger.fabric.contract.annotation.*;
@@ -20,15 +19,15 @@ import java.util.stream.Collectors;
  * members.
  *
  * @author Tobias Wagner, Dennis Lamken
- *
+ * <p>
  * Copyright 2021 OTARIS Interactive Services GmbH
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -170,7 +169,7 @@ public class MFContract implements ContractInterface {
     /**
      * Reads the meta def
      *
-     * @param ctx the Hyperledger context object
+     * @param ctx     the Hyperledger context object
      * @param product the name of the product
      * @param version the version of the meta definition
      * @return the meta def
@@ -182,7 +181,7 @@ public class MFContract implements ContractInterface {
         int versionNumber;
         try {
             versionNumber = Integer.parseInt(version);
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return helper.createReturnValue("400", "Malformatted version number");
         }
 
@@ -190,8 +189,8 @@ public class MFContract implements ContractInterface {
 
         List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributesByAssetNameAndVersion(product, versionNumber);
 
-        if(attributeDefinitions == null) {
-            if(!metaDef.assetNameExists(product))
+        if (attributeDefinitions == null) {
+            if (!metaDef.assetNameExists(product))
                 return helper.createReturnValue("400", "Product does not exist");
             else
                 return helper.createReturnValue("400", "Version does not exist");
@@ -217,7 +216,7 @@ public class MFContract implements ContractInterface {
 
         List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributesByAssetName(product);
 
-        if(attributeDefinitions == null)
+        if (attributeDefinitions == null)
             return helper.createReturnValue("400", "Product does not exist");
 
         return helper.createReturnValue("200",
@@ -381,124 +380,120 @@ public class MFContract implements ContractInterface {
     public String createObject(Context ctx, String id, String pdc, String productName, String amount,
                                String unit, String[] attributes, String[] attrValues) {
 
+        if (helper.objectExists(ctx, id))
+            return helper.createReturnValue("400", "The object with the key " + id + " already exists");
+
+        MetaDef metaDef = helper.getMetaDef(ctx);
+
+        List<MetaDef.AssetDefinition> assetDefinitions = metaDef.getAssetDefinitions();
+        MetaDef.AssetDefinition productDefinition = null;
+        for (MetaDef.AssetDefinition assetDefinition : assetDefinitions)
+            if (assetDefinition.getName().equalsIgnoreCase(productName)) {
+                productDefinition = assetDefinition;
+            }
+        if (productDefinition == null)
+            return helper.createReturnValue("400", "The product name " + productName + " is not defined");
+
+        if (!metaDef.getUnitList().contains(unit))
+            return helper.createReturnValue("400", "The unit " + unit + " is not defined");
+
+        double amountDouble;
         try {
-            if (helper.objectExists(ctx, id))
-                return helper.createReturnValue("400", "The object with the key " + id + " already exists");
-
-            MetaDef metaDef = helper.getMetaDef(ctx);
-
-            List<MetaDef.AssetDefinition> assetDefinitions = metaDef.getAssetDefinitions();
-            MetaDef.AssetDefinition productDefinition = null;
-            for (MetaDef.AssetDefinition assetDefinition : assetDefinitions)
-                if (assetDefinition.getName().equalsIgnoreCase(productName)) {
-                    productDefinition = assetDefinition;
-                }
-            if (productDefinition == null)
-                return helper.createReturnValue("400", "The product name " + productName + " is not defined");
-
-            if (!metaDef.getUnitList().contains(unit))
-                return helper.createReturnValue("400", "The unit " + unit + " is not defined");
-
-            double amountDouble;
-            try {
-                amountDouble = Double.parseDouble(amount);
-            } catch (Exception e) {
-                return helper.createReturnValue("400", "The amount " + amount + " is not a double.");
-            }
-
-            // check attributes
-            PrivateMetaObject privateMetaObject = null;
-            Map<String, byte[]> transientData = ctx.getStub().getTransient();
-            boolean isPdc;
-            if (transientData.size() != 0) {
-                if (pdc.equals(""))
-                    return helper.createReturnValue("400",
-                            "Please select a private data collection to store the private data");
-                isPdc = true;
-            } else {
-                isPdc = false;
-            }
-
-            Set<String> privateAttributes = transientData.keySet();
-            ArrayList<String> attributeNames = new ArrayList<>(Arrays.asList(attributes));
-            ArrayList<String> attributeValues = new ArrayList<>(Arrays.asList(attrValues));
-            List<MetaDef.AttributeDefinition> allowedAttr = productDefinition.getAttributes();
-            List<MetaDef.AttributeDefinition> acceptedAttr = new ArrayList<>();
-            for (MetaDef.AttributeDefinition allowedDefinition : allowedAttr) {
-                if (attributeNames.contains(allowedDefinition.getName())) {
-                    int index = attributeNames.indexOf(allowedDefinition.getName());
-                    if (index < 0)
-                        continue;
-                    if (allowedDefinition.getDataType().equalsIgnoreCase("Integer")
-                            && !attributeValues.get(index).matches("-?\\d+"))
-                        return helper.createReturnValue("400", "The attribute "
-                                + allowedDefinition.getName() + " is not an Integer");
-                    acceptedAttr.add(allowedDefinition);
-                    attributeValues.remove(index);
-                    attributeNames.remove(index);
-                } else if (isPdc && privateAttributes.contains(allowedDefinition.getName())) {
-                    String value = new String(transientData.get(allowedDefinition.getName()), StandardCharsets.UTF_8);
-                    if (allowedDefinition.getDataType().equalsIgnoreCase("Integer")
-                            && !value.matches("-?\\d+"))
-                        return helper.createReturnValue("400", "The attribute "
-                                + allowedDefinition.getName() + " is not an Integer");
-                    if (privateMetaObject == null)
-                        privateMetaObject = new PrivateMetaObject();
-                    privateMetaObject.addAttribute(allowedDefinition.getName(), allowedDefinition.getVersion(), value);
-                    privateAttributes.remove(allowedDefinition.getName());
-                }
-            }
-            if (attributeNames.size() > 0) {
-                if (attributeNames.size() == 1)
-                    return helper.createReturnValue("400", "The attribute "
-                            + attributeNames.get(0) + " is not defined");
-                else {
-                    StringBuilder result = new StringBuilder("The attributes ");
-                    result.append(attributeNames.get(0));
-                    for (int i = 1; i < attributeNames.size(); i++) {
-                        result.append(", ");
-                        result.append(attributeNames.get(i));
-                    }
-                    result.append(" are not defined");
-                    return helper.createReturnValue("400", result.toString());
-                }
-            }
-            if (privateAttributes.size() > 0) {
-                String[] privateAttributesArray = privateAttributes.toArray(new String[0]);
-                if (privateAttributes.size() == 1)
-                    return helper.createReturnValue("400", "The attribute "
-                            + privateAttributesArray[0] + " is not defined");
-                else {
-                    StringBuilder result = new StringBuilder("The attributes ");
-                    result.append(attributeNames.get(0));
-                    for (int i = 1; i < privateAttributesArray.length; i++) {
-                        result.append(", ");
-                        result.append(privateAttributesArray[i]);
-                    }
-                    result.append(" are not defined");
-                    return helper.createReturnValue("400", result.toString());
-                }
-            }
-
-            isPdc = isPdc && privateMetaObject != null;
-
-            // attribute check end
-
-            if (isPdc)
-                helper.putPrivateData(ctx, pdc, id + PDC_STRING, privateMetaObject);
-
-            String timeStamp = ctx.getStub().getTxTimestamp().toString();
-            MetaObject metaObject = new MetaObject(isPdc ? pdc : "", productDefinition.getName(), productDefinition.getVersion(), amountDouble, unit, acceptedAttr, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
-            metaObject.setKey(id);
-            helper.putState(ctx, id, metaObject);
-
-            return helper.createReturnValue("200", metaObject.toJSON());
-        } catch(Exception e) {
-            JSONObject result = new JSONObject();
-            result.put("message", e.getMessage());
-            result.put("stackTrace", e.getStackTrace());
-            return helper.createReturnValue("400", result);
+            amountDouble = Double.parseDouble(amount);
+        } catch (Exception e) {
+            return helper.createReturnValue("400", "The amount " + amount + " is not a double.");
         }
+
+        // check attributes
+        PrivateMetaObject privateMetaObject = null;
+        Map<String, byte[]> transientData = ctx.getStub().getTransient();
+        boolean isPdc;
+        if (transientData.size() != 0) {
+            if (pdc.equals(""))
+                return helper.createReturnValue("400",
+                        "Please select a private data collection to store the private data");
+            isPdc = true;
+        } else {
+            isPdc = false;
+        }
+
+        Set<String> privateAttributes = transientData.keySet();
+        ArrayList<String> attributeNames = new ArrayList<>(Arrays.asList(attributes));
+        ArrayList<String> attributeValues = new ArrayList<>(Arrays.asList(attrValues));
+        List<MetaDef.AttributeDefinition> allowedAttr = productDefinition.getAttributes();
+        List<MetaDef.AttributeDefinition> acceptedAttr = new ArrayList<>();
+        for (MetaDef.AttributeDefinition allowedDefinition : allowedAttr) {
+            if (attributeNames.contains(allowedDefinition.getName())) {
+                if (isPdc && privateAttributes.contains(allowedDefinition.getName()))
+                    return helper.createReturnValue("400", "The attribute "
+                            + allowedDefinition.getName() + " is defined as a public and private attribute.");
+                int index = attributeNames.indexOf(allowedDefinition.getName());
+                if (index < 0)
+                    continue;
+                if (allowedDefinition.getDataType().equalsIgnoreCase("Integer")
+                        && !attributeValues.get(index).matches("-?\\d+"))
+                    return helper.createReturnValue("400", "The attribute "
+                            + allowedDefinition.getName() + " is not an Integer");
+                acceptedAttr.add(allowedDefinition);
+                attributeValues.remove(index);
+                attributeNames.remove(index);
+            } else if (isPdc && privateAttributes.contains(allowedDefinition.getName())) {
+                String value = new String(transientData.get(allowedDefinition.getName()), StandardCharsets.UTF_8);
+                if (allowedDefinition.getDataType().equalsIgnoreCase("Integer")
+                        && !value.matches("-?\\d+"))
+                    return helper.createReturnValue("400", "The attribute "
+                            + allowedDefinition.getName() + " is not an Integer");
+                if (privateMetaObject == null)
+                    privateMetaObject = new PrivateMetaObject();
+                privateMetaObject.addAttribute(allowedDefinition.getName(), allowedDefinition.getVersion(), value);
+                privateAttributes.remove(allowedDefinition.getName());
+            }
+        }
+        if (attributeNames.size() > 0) {
+            if (attributeNames.size() == 1)
+                return helper.createReturnValue("400", "The attribute "
+                        + attributeNames.get(0) + " is not defined");
+            else {
+                StringBuilder result = new StringBuilder("The attributes ");
+                result.append(attributeNames.get(0));
+                for (int i = 1; i < attributeNames.size(); i++) {
+                    result.append(", ");
+                    result.append(attributeNames.get(i));
+                }
+                result.append(" are not defined");
+                return helper.createReturnValue("400", result.toString());
+            }
+        }
+        if (privateAttributes.size() > 0) {
+            String[] privateAttributesArray = privateAttributes.toArray(new String[0]);
+            if (privateAttributes.size() == 1)
+                return helper.createReturnValue("400", "The attribute "
+                        + privateAttributesArray[0] + " is not defined");
+            else {
+                StringBuilder result = new StringBuilder("The attributes ");
+                result.append(attributeNames.get(0));
+                for (int i = 1; i < privateAttributesArray.length; i++) {
+                    result.append(", ");
+                    result.append(privateAttributesArray[i]);
+                }
+                result.append(" are not defined");
+                return helper.createReturnValue("400", result.toString());
+            }
+        }
+
+        isPdc = isPdc && privateMetaObject != null;
+
+        // attribute check end
+
+        if (isPdc)
+            helper.putPrivateData(ctx, pdc, id + PDC_STRING, privateMetaObject);
+
+        String timeStamp = ctx.getStub().getTxTimestamp().toString();
+        MetaObject metaObject = new MetaObject(isPdc ? pdc : "", productDefinition.getName(), productDefinition.getVersion(), amountDouble, unit, acceptedAttr, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
+        metaObject.setKey(id);
+        helper.putState(ctx, id, metaObject);
+
+        return helper.createReturnValue("200", metaObject.toJSON());
     }
 
     /**
@@ -645,7 +640,7 @@ public class MFContract implements ContractInterface {
         List<MetaDef.AttributeDefinition> allowedAttr = metaDef.getAttributesByAssetNameAndVersion(metaObject.getProductName(),
                 metaObject.getProductVersion());
 
-        if(allowedAttr != null) {
+        if (allowedAttr != null) {
             for (MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
                 if (attributeList.contains(attributeDefinition.getName())) {
                     int index = attributeList.indexOf(attributeDefinition.getName());
@@ -713,8 +708,8 @@ public class MFContract implements ContractInterface {
         Set<String> privateAttributes = transientData.keySet();
         List<MetaDef.AttributeDefinition> allowedAttr = metaDef.getAttributesByAssetNameAndVersion(metaObject.getProductName(),
                 metaObject.getProductVersion());
-        for(MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
-            if(privateAttributes.contains(attributeDefinition.getName())) {
+        for (MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
+            if (privateAttributes.contains(attributeDefinition.getName())) {
                 String value = new String(transientData.get(attributeDefinition.getName()), StandardCharsets.UTF_8);
                 if (attributeDefinition.getDataType().equals("Integer")
                         && !value.matches("-?\\d+"))

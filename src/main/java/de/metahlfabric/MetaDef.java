@@ -13,15 +13,15 @@ import java.util.List;
  * The MetaDef defines the attributes and assets available in this channel.
  *
  * @author Tobias Wagner, Dennis Lamken
- *
+ * <p>
  * Copyright 2021 OTARIS Interactive Services GmbH
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -92,9 +92,9 @@ public class MetaDef {
         for (AttributeDefinition attributeDefinition : this.attributeDefinitions)
             if (attributeDefinition.getName().equalsIgnoreCase(attribute)) {
                 attributeDefinition.setDataType(dataType);
-                for(AssetDefinition assetDefinition : this.assetDefinitions) {
-                    for(AttributeDefinition oldAttributeDefinition : assetDefinition.getAttributes()) {
-                        if(oldAttributeDefinition.getName().equalsIgnoreCase(attribute)) {
+                for (AssetDefinition assetDefinition : this.assetDefinitions) {
+                    for (AttributeDefinition oldAttributeDefinition : assetDefinition.getAttributes()) {
+                        if (oldAttributeDefinition.getName().equalsIgnoreCase(attribute)) {
                             try {
                                 assetDefinition.removeAttribute(oldAttributeDefinition);
                                 assetDefinition.addAttribute(attributeDefinition);
@@ -159,8 +159,8 @@ public class MetaDef {
             if (assetDefinition.getName().equalsIgnoreCase(assetName)) {
                 // Asset already exists!
                 List<AttributeDefinition> existingAttributes = assetDefinition.getAttributes();
-                for(AttributeDefinition existingAttribute : existingAttributes) {
-                    if(!attributeNames.contains(existingAttribute.getName())) {
+                for (AttributeDefinition existingAttribute : existingAttributes) {
+                    if (!attributeNames.contains(existingAttribute.getName())) {
                         try {
                             assetDefinition.removeAttribute(existingAttribute);
                         } catch (AttributeNotFoundException e) {
@@ -170,8 +170,8 @@ public class MetaDef {
                         attributeNames.remove(existingAttribute.getName());
                     }
                 }
-                for(AttributeDefinition attributeDefinition : attributes) {
-                    if(attributeNames.contains(attributeDefinition.getName())) {
+                for (AttributeDefinition attributeDefinition : attributes) {
+                    if (attributeNames.contains(attributeDefinition.getName())) {
                         assetDefinition.addAttribute(attributeDefinition);
                     }
                 }
@@ -293,14 +293,14 @@ public class MetaDef {
         }
 
         public List<AttributeDefinition> getAttributes(int version) {
-            if(version < 1)
+            if (version < 1)
                 return null;
             ArrayList<AttributeDefinition> attributeDefinitionsOfVersion = new ArrayList<>();
             attributeDefinitionsOfVersion.addAll(this.attributes);
 
-            for(int i = this.version - 1; i >= version; i--) {
+            for (int i = this.version - 1; i >= version; i--) {
                 AttributeChange attributeChange = this.changeHistory.get(i);
-                if(attributeChange.type.equals(ChangeType.ADD))
+                if (attributeChange.type.equals(ChangeType.ADD))
                     attributeDefinitionsOfVersion.remove(attributeChange.attribute);
                 else
                     attributeDefinitionsOfVersion.add(attributeChange.attribute);
