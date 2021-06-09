@@ -420,8 +420,8 @@ public class MFContract implements ContractInterface {
             }
 
             Set<String> privateAttributes = transientData.keySet();
-            List<String> attributeNames = Arrays.asList(attributes);
-            List<String> attributeValues = Arrays.asList(attrValues);
+            ArrayList<String> attributeNames = new ArrayList<>(Arrays.asList(attributes));
+            ArrayList<String> attributeValues = new ArrayList<>(Arrays.asList(attrValues));
             List<MetaDef.AttributeDefinition> allowedAttr = productDefinition.getAttributes();
             List<MetaDef.AttributeDefinition> acceptedAttr = new ArrayList<>();
             for (MetaDef.AttributeDefinition allowedDefinition : allowedAttr) {
@@ -640,8 +640,8 @@ public class MFContract implements ContractInterface {
 
         MetaDef metaDef = helper.getMetaDef(ctx);
 
-        List<String> attributeList = Arrays.asList(attrName);
-        List<String> attributeValues = Arrays.asList(attrValue);
+        ArrayList<String> attributeList = new ArrayList<>(Arrays.asList(attrName));
+        ArrayList<String> attributeValues = new ArrayList<>(Arrays.asList(attrValue));
         List<MetaDef.AttributeDefinition> allowedAttr = metaDef.getAttributesByAssetNameAndVersion(metaObject.getProductName(),
                 metaObject.getProductVersion());
 
