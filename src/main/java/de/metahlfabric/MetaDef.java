@@ -264,6 +264,11 @@ public class MetaDef {
                 return this.dataTypeHistory.get(version - 1);
         }
 
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof AttributeDefinition && ((AttributeDefinition) obj).getName().equalsIgnoreCase(this.name)
+                    && ((AttributeDefinition) obj).getVersion().equals(this.version);
+        }
     }
 
     @DataType
@@ -295,8 +300,7 @@ public class MetaDef {
         public List<AttributeDefinition> getAttributes(int version) {
             if (version < 1)
                 return null;
-            ArrayList<AttributeDefinition> attributeDefinitionsOfVersion = new ArrayList<>();
-            attributeDefinitionsOfVersion.addAll(this.attributes);
+            ArrayList<AttributeDefinition> attributeDefinitionsOfVersion = new ArrayList<>(this.attributes);
 
             for (int i = this.version - 2; i >= version - 1; i--) {
                 AttributeChange attributeChange = this.changeHistory.get(i);
