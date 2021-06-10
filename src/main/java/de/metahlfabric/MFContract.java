@@ -88,7 +88,7 @@ public class MFContract implements ContractInterface {
         Iterator<KeyValue> it = result.iterator();
         JSONArray jsonArray = new JSONArray();
         while (it.hasNext()) {
-            jsonArray.put(new String(it.next().getValue(), StandardCharsets.UTF_8));
+            jsonArray.put(new JSONObject(new String(it.next().getValue(), StandardCharsets.UTF_8)));
         }
         JSONObject response = new JSONObject();
         response.put("result", jsonArray);
