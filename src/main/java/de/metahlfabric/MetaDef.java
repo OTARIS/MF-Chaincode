@@ -304,9 +304,11 @@ public class MetaDef {
 
             for (int i = this.version - 2; i >= version - 1; i--) {
                 AttributeChange attributeChange = this.changeHistory.get(i);
-                if (attributeChange.type.equals(ChangeType.ADD))
-                    attributeDefinitionsOfVersion.remove(attributeChange.attribute);
-                else
+                if (attributeChange.type.equals(ChangeType.ADD)) {
+                    attributeDefinitionsOfVersion.removeIf(attributeDefinitionOfVersion
+                            -> attributeDefinitionOfVersion.getName().equalsIgnoreCase(attributeChange.attribute.getName())
+                            && attributeDefinitionOfVersion.getVersion().equals(attributeChange.attribute.getVersion()));
+                } else
                     attributeDefinitionsOfVersion.add(attributeChange.attribute);
             }
 
@@ -338,7 +340,7 @@ public class MetaDef {
                     break;
                 } else
                     i++;
-            if(toRemove == -1)
+            if (toRemove == -1)
                 throw new AttributeNotFoundException("Attempt to remove an attribute which is not in the attribute list!");
             this.attributes.remove(toRemove);
             this.changeHistory.add(new AttributeChange(ChangeType.DELETE, attribute));
