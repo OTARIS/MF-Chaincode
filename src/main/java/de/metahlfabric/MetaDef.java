@@ -331,18 +331,9 @@ public class MetaDef {
                 AttributeNotFoundException {
             if (attribute == null)
                 throw new NullPointerException("Attempt to remove an attribute but the parameter given was Null!");
-            int toRemove = -1;
-            int i = 0;
-            for (AttributeDefinition attributeDefinition : this.attributes)
-                if (attributeDefinition.getName().equalsIgnoreCase(attribute.getName())
-                        && attributeDefinition.getVersion().equals(attribute.getVersion())) {
-                    toRemove = i;
-                    break;
-                } else
-                    i++;
-            if (toRemove == -1)
+            if (!this.attributes.removeIf(attributeDefinition -> attributeDefinition.getName().equalsIgnoreCase(attribute.getName())
+                    && attributeDefinition.getVersion().equals(attribute.getVersion())))
                 throw new AttributeNotFoundException("Attempt to remove an attribute which is not in the attribute list!");
-            this.attributes.remove(toRemove);
             this.changeHistory.add(new AttributeChange(ChangeType.DELETE, attribute));
             this.version++;
         }
