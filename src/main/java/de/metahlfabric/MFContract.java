@@ -303,10 +303,6 @@ public class MFContract implements ContractInterface {
             metaDef = helper.getMetaDef(ctx);
         }
 
-        if (!(dataType.equals("String") || dataType.equals("Integer") || dataType.equals("Float")))
-            return helper.createReturnValue("400", "The data type ("
-                    + dataType + ") must be String, Integer or Float");
-
         metaDef.addAttributeDefinition(attribute, dataType);
         helper.putState(ctx, META_DEF_ID, metaDef);
 
