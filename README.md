@@ -26,17 +26,13 @@ Before you install the chain code make sure your network is set up.
 We recommend to start with the startNetwork.sh script for fabric-version2x of the [NutriSafe network tools](https://github.com/NutriSafe-DLT/nutrisafe/ "NutriSafe Network").
 
       cd fabric-version2x/
-      
       ./startNetwork.sh
 
 For an easy installation of the chain code, you only need to copy the MetaHL Fabric Chain Code sources into the chaincode folder and run the installCC.sh script.
 
       cd chaincode/
-      
       git clone https://github.com/OTARIS/MF-Chaincode/ MF-Chain-Code
-      
       cd ..
-      
       ./installCC.sh -c MF-Chain-Code
 
 For easy use to the chain code, do not forget to check out the [MetaHL Fabric REST API](https://github.com/OTARIS/MF-REST-API/ "MetaHL Fabric REST API") repo!
