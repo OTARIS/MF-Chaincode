@@ -55,24 +55,24 @@ public class PrivateMetaObject {
             throws NumberFormatException, JsonSyntaxException {
         this.deleteAttribute(attrName);
         switch (type) {
-            case Integer:
-                attributes.add(new MetaAttribute<>(attrName, version, Long.parseLong(attrValue)));
+            case Boolean:
+                attributes.add(new MetaAttribute<>(attrName, version, Boolean.parseBoolean(attrValue)));
                 break;
-            case Float:
+            case Number:
                 attributes.add(new MetaAttribute<>(attrName, version, Double.parseDouble(attrValue)));
                 break;
             case String:
                 attributes.add(new MetaAttribute<>(attrName, version, attrValue));
                 break;
-            case IntegerArray:
-                ArrayList<Long> array = new ArrayList<>();
+            case BooleanArray:
+                ArrayList<Boolean> array = new ArrayList<>();
                 JsonArray jsonArray = new Gson().fromJson(attrValue, JsonArray.class);
                 for (JsonElement number : jsonArray) {
-                    array.add(number.getAsLong());
+                    array.add(number.getAsBoolean());
                 }
                 attributes.add(new MetaAttribute<>(attrName, version, array));
                 break;
-            case FloatArray:
+            case NumberArray:
                 ArrayList<Double> array2 = new ArrayList<>();
                 JsonArray jsonArray2 = new Gson().fromJson(attrValue, JsonArray.class);
                 for (JsonElement number : jsonArray2) {

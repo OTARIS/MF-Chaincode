@@ -464,20 +464,12 @@ public class MFContract implements ContractInterface {
                 int index = attributeNames.indexOf(allowedDefinition.getName());
                 if (index < 0)
                     continue;
-                if (allowedDefinition.getDataType().equals(MetaDef.AttributeDataType.Integer)
-                        && !attributeValues.get(index).matches("-?\\d+"))
-                    return helper.createReturnValue("400", "The attribute "
-                            + allowedDefinition.getName() + " is not an Integer");
                 acceptedAttr.add(allowedDefinition);
                 acceptedValues.add(attributeValues.get(index));
                 attributeValues.remove(index);
                 attributeNames.remove(index);
             } else if (isPdc && privateAttributes.contains(allowedDefinition.getName())) {
                 String value = new String(transientData.get(allowedDefinition.getName()), StandardCharsets.UTF_8);
-                if (allowedDefinition.getDataType().equals(MetaDef.AttributeDataType.Integer)
-                        && !value.matches("-?\\d+"))
-                    return helper.createReturnValue("400", "The attribute "
-                            + allowedDefinition.getName() + " is not an Integer");
                 if (privateMetaObject == null)
                     privateMetaObject = new PrivateMetaObject();
                 try {
@@ -696,10 +688,6 @@ public class MFContract implements ContractInterface {
             for (MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
                 if (attributeList.contains(attributeDefinition.getName())) {
                     int index = attributeList.indexOf(attributeDefinition.getName());
-                    if (attributeDefinition.getDataType().equals(MetaDef.AttributeDataType.Integer)
-                            && !attributeValues.get(index).matches("-?\\d+"))
-                        return helper.createReturnValue("400", "The attribute "
-                                + attributeDefinition.getName() + " is not an Integer");
                     try {
                         metaObject.addAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(),
                                 attributeValues.get(index), attributeDefinition.getDataType());
@@ -768,10 +756,6 @@ public class MFContract implements ContractInterface {
         for (MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
             if (privateAttributes.contains(attributeDefinition.getName())) {
                 String value = new String(transientData.get(attributeDefinition.getName()), StandardCharsets.UTF_8);
-                if (attributeDefinition.getDataType().equals(MetaDef.AttributeDataType.Integer)
-                        && !value.matches("-?\\d+"))
-                    return helper.createReturnValue("400", "The attribute "
-                            + attributeDefinition.getName() + " is not an Integer");
                 if (privateMetaObject == null)
                     privateMetaObject = new PrivateMetaObject();
                 try {

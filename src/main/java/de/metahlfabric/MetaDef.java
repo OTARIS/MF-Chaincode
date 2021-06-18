@@ -32,7 +32,7 @@ import java.util.List;
 public class MetaDef {
 
     private enum ChangeType {ADD, DELETE}
-    public enum AttributeDataType {Integer, Float, String, IntegerArray, FloatArray, StringArray}
+    public enum AttributeDataType {Number, Boolean, String, NumberArray, BooleanArray, StringArray}
 
     @Property
     ArrayList<AttributeDefinition> attributeDefinitions;
@@ -84,18 +84,29 @@ public class MetaDef {
             case "int":
             case "Long":
             case "long":
-                mDataType = AttributeDataType.Integer;
-                break;
             case "Float":
             case "float":
             case "Double":
             case "double":
-                mDataType = AttributeDataType.Float;
+            case "Number":
+            case "number":
+                mDataType = AttributeDataType.Number;
+                break;
+            case "bool":
+            case "boolean":
+            case "Boolean":
+                mDataType = AttributeDataType.Boolean;
                 break;
             case "Array":
             case "StringArray":
             case "ArrayOfString":
                 mDataType = AttributeDataType.StringArray;
+                break;
+            case "BoolArray":
+            case "BooleanArray":
+            case "ArrayOfBool":
+            case "ArrayOfBoolean":
+                mDataType = AttributeDataType.BooleanArray;
                 break;
             case "intArray":
             case "IntegerArray":
@@ -104,15 +115,17 @@ public class MetaDef {
             case "longArray":
             case "LongArray":
             case "ArrayOfLong":
-                mDataType = AttributeDataType.IntegerArray;
-                break;
             case "floatArray":
             case "FloatArray":
             case "ArrayOfFloat":
             case "doubleArray":
             case "DoubleArray":
             case "ArrayOfDouble":
-                mDataType = AttributeDataType.FloatArray;
+            case "numberArray":
+            case "NumberArray":
+            case "ArrayOfNumber":
+            case "ArrayOfNumbers":
+                mDataType = AttributeDataType.NumberArray;
                 break;
             default:
                 mDataType = AttributeDataType.String;

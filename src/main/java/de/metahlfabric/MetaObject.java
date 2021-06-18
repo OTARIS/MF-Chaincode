@@ -117,7 +117,8 @@ public class MetaObject {
      * @param timeStamp            the time of the creation (auto generated)
      * @param owner                the initial owner of this object
      */
-    public MetaObject(String pdc, String productName, Integer productVersion, double amount, String unit, List<AttributeDefinition> attributeDefinitions, String[] attrValues, String timeStamp, String owner)
+    public MetaObject(String pdc, String productName, Integer productVersion, double amount, String unit,
+                      List<AttributeDefinition> attributeDefinitions, String[] attrValues, String timeStamp, String owner)
             throws NumberFormatException, JsonSyntaxException {
         this.productName = productName;
         this.productVersion = productVersion;
@@ -127,30 +128,35 @@ public class MetaObject {
         int i = 0;
         for (AttributeDefinition attributeDefinition : attributeDefinitions) {
             switch (attributeDefinition.getDataType()) {
-                case Integer:
-                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), Long.parseLong(attrValues[i])));
+                case Boolean:
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(),
+                            Boolean.parseBoolean(attrValues[i])));
                     break;
-                case Float:
-                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), Double.parseDouble(attrValues[i])));
+                case Number:
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(),
+                            Double.parseDouble(attrValues[i])));
                     break;
                 case String:
-                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), attrValues[i]));
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(),
+                            attrValues[i]));
                     break;
-                case IntegerArray:
-                    ArrayList<Long> array = new ArrayList<>();
+                case BooleanArray:
+                    ArrayList<Boolean> array = new ArrayList<>();
                     JsonArray jsonArray = new Gson().fromJson(attrValues[i], JsonArray.class);
                     for(JsonElement number : jsonArray) {
-                        array.add(number.getAsLong());
+                        array.add(number.getAsBoolean());
                     }
-                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), array));
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(),
+                            array));
                     break;
-                case FloatArray:
+                case NumberArray:
                     ArrayList<Double> array2 = new ArrayList<>();
                     JsonArray jsonArray2 = new Gson().fromJson(attrValues[i], JsonArray.class);
                     for(JsonElement number : jsonArray2) {
                         array2.add(number.getAsDouble());
                     }
-                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), array2));
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(),
+                            array2));
                     break;
                 case StringArray:
                     ArrayList<String> array3 = new ArrayList<>();
@@ -158,7 +164,8 @@ public class MetaObject {
                     for(JsonElement text : jsonArray3) {
                         array3.add(text.getAsString());
                     }
-                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), array3));
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(),
+                            array3));
                     break;
             }
             i++;
@@ -296,24 +303,24 @@ public class MetaObject {
             throws NumberFormatException, JsonSyntaxException {
         this.deleteAttribute(attrName);
         switch (type) {
-            case Integer:
-                attributes.add(new MetaAttribute<>(attrName, version, Long.parseLong(attrValue)));
+            case Boolean:
+                attributes.add(new MetaAttribute<>(attrName, version, Boolean.parseBoolean(attrValue)));
                 break;
-            case Float:
+            case Number:
                 attributes.add(new MetaAttribute<>(attrName, version, Double.parseDouble(attrValue)));
                 break;
             case String:
                 attributes.add(new MetaAttribute<>(attrName, version, attrValue));
                 break;
-            case IntegerArray:
-                ArrayList<Long> array = new ArrayList<>();
+            case BooleanArray:
+                ArrayList<Boolean> array = new ArrayList<>();
                 JsonArray jsonArray = new Gson().fromJson(attrValue, JsonArray.class);
                 for (JsonElement number : jsonArray) {
-                    array.add(number.getAsLong());
+                    array.add(number.getAsBoolean());
                 }
                 attributes.add(new MetaAttribute<>(attrName, version, array));
                 break;
-            case FloatArray:
+            case NumberArray:
                 ArrayList<Double> array2 = new ArrayList<>();
                 JsonArray jsonArray2 = new Gson().fromJson(attrValue, JsonArray.class);
                 for (JsonElement number : jsonArray2) {
