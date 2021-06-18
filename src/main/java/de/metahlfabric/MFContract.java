@@ -455,6 +455,7 @@ public class MFContract implements ContractInterface {
         ArrayList<String> attributeValues = new ArrayList<>(Arrays.asList(attrValues));
         List<MetaDef.AttributeDefinition> allowedAttr = productDefinition.getAttributes();
         List<MetaDef.AttributeDefinition> acceptedAttr = new ArrayList<>();
+        List<String> acceptedValues = new ArrayList<>();
         for (MetaDef.AttributeDefinition allowedDefinition : allowedAttr) {
             if (attributeNames.contains(allowedDefinition.getName())) {
                 if (isPdc && privateAttributes.contains(allowedDefinition.getName()))
@@ -468,6 +469,7 @@ public class MFContract implements ContractInterface {
                     return helper.createReturnValue("400", "The attribute "
                             + allowedDefinition.getName() + " is not an Integer");
                 acceptedAttr.add(allowedDefinition);
+                acceptedValues.add(attributeValues.get(index));
                 attributeValues.remove(index);
                 attributeNames.remove(index);
             } else if (isPdc && privateAttributes.contains(allowedDefinition.getName())) {
@@ -531,7 +533,9 @@ public class MFContract implements ContractInterface {
 
         String timeStamp = ctx.getStub().getTxTimestamp().toString();
         try {
-            MetaObject metaObject = new MetaObject(isPdc ? pdc : "", productDefinition.getName(), productDefinition.getVersion(), amountDouble, unit, acceptedAttr, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
+            MetaObject metaObject = new MetaObject(isPdc ? pdc : "", productDefinition.getName(),
+                    productDefinition.getVersion(), amountDouble, unit, acceptedAttr,
+                    acceptedValues.toArray(new String[0]), timeStamp, ctx.getClientIdentity().getMSPID());
             metaObject.setKey(id);
             helper.putState(ctx, id, metaObject);
 
