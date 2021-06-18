@@ -1,8 +1,9 @@
 package de.metahlfabric;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.hyperledger.fabric.contract.Context;
-import org.json.JSONObject;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -30,28 +31,36 @@ public class Utils {
     /**
      * Creates a return value with a status code and a message
      *
-     * @param statusCode the status code to pass (200 ok, 400 error)
-     * @param message    the message to pass
+     * @param message the message to pass
      * @return the return message as json string
      */
-    String createReturnValue(String statusCode, JSONObject message) {
-        JSONObject response = new JSONObject();
-        response.put("status", statusCode);
-        response.put("response", message);
+    String createSuccessReturnValue(JsonElement message) {
+        JsonObject response = new JsonObject();
+        response.addProperty("status", "200");
+        response.add("response", message);
         return response.toString();
     }
 
     String createReturnValue(String statusCode, String message) {
-        JSONObject responseValue = new JSONObject();
-        responseValue.put("message", message);
-        JSONObject response = new JSONObject();
-        response.put("status", statusCode);
-        response.put("response", responseValue);
+        JsonObject response = new JsonObject();
+        response.addProperty("status", statusCode);
+        response.addProperty("response", message);
         return response.toString();
     }
 
+    String createSuccessReturnValue(boolean message) {
+        JsonObject response = new JsonObject();
+        response.addProperty("status", "200");
+        response.addProperty("response", message);
+        return response.toString();
+    }
+
+    String createSuccessReturnValue(Object message) {
+        return this.createSuccessReturnValue(new Gson().fromJson(new Gson().toJson(message), JsonObject.class));
+    }
+
     /**
-     * @param ctx the hyperledger context object
+     * @param ctx the Hyperledger context object
      * @param id  the id to check
      * @return true, if object exists
      */
@@ -61,7 +70,7 @@ public class Utils {
     }
 
     /**
-     * @param ctx the hyperledger context object
+     * @param ctx the Hyperledger context object
      * @param id  the id to check
      * @param pdc the private data collection where the object should be stored
      * @return true, if object exists
@@ -74,7 +83,7 @@ public class Utils {
     /**
      * Writes the MetaDef to the ledger
      *
-     * @param ctx     the hyperledger context object
+     * @param ctx     the Hyperledger context object
      * @param id      the corresponding id for the object
      * @param metaDef the MetaDef object to save
      */
@@ -85,7 +94,7 @@ public class Utils {
     /**
      * Writes the MetaObject to the ledger
      *
-     * @param ctx        the hyperledger context object
+     * @param ctx        the Hyperledger context object
      * @param id         the corresponding id for the object
      * @param metaObject the MetaObject to save
      */
@@ -96,7 +105,7 @@ public class Utils {
     /**
      * Writes the PrivateMetaObject inside the specified private data collection
      *
-     * @param ctx               the hyperledger context object
+     * @param ctx               the Hyperledger context object
      * @param pdc               the corresponding private data collection for the object
      * @param id                the corresponding id for the object
      * @param privateMetaObject the privateMetaObject to save
@@ -108,7 +117,7 @@ public class Utils {
     /**
      * Gets the PrivateMetaObject (if it does not exist, an empty Object will be created)
      *
-     * @param ctx the hyperledger context object
+     * @param ctx the Hyperledger context object
      * @param pdc the private data collection where the object should be stored
      * @param id  the corresponding id for the object
      * @return the privateMetaObject
@@ -125,7 +134,7 @@ public class Utils {
     }
 
     /**
-     * @param ctx the hyperledger context object
+     * @param ctx the Hyperledger context object
      * @return the MetaDef object
      */
     public MetaDef getMetaDef(Context ctx) {
@@ -136,7 +145,7 @@ public class Utils {
     }
 
     /**
-     * @param ctx the hyperledger context object
+     * @param ctx the Hyperledger context object
      * @param id  the corresponding id for the object
      * @return the MetaObject
      */
@@ -145,9 +154,9 @@ public class Utils {
     }
 
     /**
-     * @param ctx
-     * @param name
-     * @param payload
+     * @param ctx     the Hyperledger context object
+     * @param name    the event name
+     * @param payload additional info about the event
      */
     public void emitEvent(Context ctx, String name, byte[] payload) {
         ctx.getStub().setEvent(name, payload);

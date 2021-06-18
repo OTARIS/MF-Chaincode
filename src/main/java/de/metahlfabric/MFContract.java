@@ -1,15 +1,15 @@
 package de.metahlfabric;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import org.hyperledger.fabric.contract.Context;
 import org.hyperledger.fabric.contract.ContractInterface;
 import org.hyperledger.fabric.contract.annotation.*;
 import org.hyperledger.fabric.shim.ledger.KeyValue;
 import org.hyperledger.fabric.shim.ledger.QueryResultsIterator;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -57,11 +57,6 @@ public class MFContract implements ContractInterface {
     static String PDC_STRING = "_P";
 
     /**
-     * Name of the state-owned private data collection
-     */
-    static String AUTHORITY_PDC = "AuthCollection";
-
-    /**
      * The Utils object
      */
     Utils helper = new Utils();
@@ -84,15 +79,12 @@ public class MFContract implements ContractInterface {
     @Transaction
     public String queryChaincodeByQueryString(Context ctx, String queryString) {
         QueryResultsIterator<KeyValue> result = ctx.getStub().getQueryResult(queryString);
-        //"{\"selector\":{\"actualOwner\":\"Org1MSP\"}}"
         Iterator<KeyValue> it = result.iterator();
-        JSONArray jsonArray = new JSONArray();
+        JsonArray jsonArray = new JsonArray();
         while (it.hasNext()) {
-            jsonArray.put(new JSONObject(new String(it.next().getValue(), StandardCharsets.UTF_8)));
+            jsonArray.add(new Gson().fromJson(new String(it.next().getValue(), StandardCharsets.UTF_8), JsonObject.class));
         }
-        JSONObject response = new JSONObject();
-        response.put("result", jsonArray);
-        return helper.createReturnValue("200", response);
+        return helper.createSuccessReturnValue(jsonArray);
     }
 
     /**
@@ -105,13 +97,7 @@ public class MFContract implements ContractInterface {
     @Transaction
     public String objectExists(Context ctx, String id) {
         byte[] buffer = ctx.getStub().getState(id);
-        JSONObject response = new JSONObject();
-        if (buffer != null && buffer.length > 0) {
-            response.put("objectExists", "true");
-        } else {
-            response.put("objectExists", "false");
-        }
-        return helper.createReturnValue("200", response);
+        return helper.createSuccessReturnValue(buffer != null && buffer.length > 0);
     }
 
     /**
@@ -125,13 +111,7 @@ public class MFContract implements ContractInterface {
     @Transaction()
     public String privateObjectExists(Context ctx, String id, String pdc) {
         byte[] buffer = ctx.getStub().getPrivateDataHash(pdc, id);
-        JSONObject response = new JSONObject();
-        if (buffer != null && buffer.length > 0) {
-            response.put("objectExists", "true");
-        } else {
-            response.put("objectExists", "false");
-        }
-        return helper.createReturnValue("200", response);
+        return helper.createSuccessReturnValue(buffer != null && buffer.length > 0);
     }
 
     /**
@@ -187,7 +167,8 @@ public class MFContract implements ContractInterface {
     @Transaction()
     public String META_getAttributesOfProductWithVersion(Context ctx, String product, String version) {
         if (!helper.objectExists(ctx, META_DEF_ID))
-            return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID + " does not exist");
+            return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID
+                    + " does not exist");
         int versionNumber;
         try {
             versionNumber = Integer.parseInt(version);
@@ -197,7 +178,8 @@ public class MFContract implements ContractInterface {
 
         MetaDef metaDef = helper.getMetaDef(ctx);
 
-        List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributesByAssetNameAndVersion(product, versionNumber);
+        List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributesByAssetNameAndVersion(product,
+                versionNumber);
 
         if (attributeDefinitions == null) {
             if (!metaDef.assetNameExists(product))
@@ -205,9 +187,49 @@ public class MFContract implements ContractInterface {
             else
                 return helper.createReturnValue("400", "Version does not exist");
         }
-        JSONObject result = new JSONObject();
-        result.put("attributes", new JSONArray(new Gson().toJson(attributeDefinitions)));
-        return helper.createReturnValue("200", result);
+        JsonObject result = new JsonObject();
+        result.add("attributes",
+                new Gson().fromJson(new Gson().toJson(attributeDefinitions.toArray(new MetaDef.AttributeDefinition[0])),
+                        JsonArray.class));
+        return helper.createSuccessReturnValue(result);
+    }
+
+    /**
+     * Reads the meta def
+     *
+     * @param ctx       the Hyperledger context object
+     * @param attribute the name of the attribute
+     * @param version   the version of the meta definition
+     * @return the meta def
+     */
+    @Transaction()
+    public String META_getDataTypeOfAttributeWithVersion(Context ctx, String attribute, String version) {
+        if (!helper.objectExists(ctx, META_DEF_ID))
+            return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID
+                    + " does not exist");
+        int versionNumber;
+        try {
+            versionNumber = Integer.parseInt(version);
+        } catch (NumberFormatException e) {
+            return helper.createReturnValue("400", "Malformatted version number");
+        }
+
+        MetaDef metaDef = helper.getMetaDef(ctx);
+
+        List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributeList();
+
+        if (attributeDefinitions != null)
+            for (MetaDef.AttributeDefinition metaDefinition : attributeDefinitions)
+                if (metaDefinition.getName().equalsIgnoreCase(attribute)) {
+                    MetaDef.AttributeDataType dataType = metaDefinition.getDataType(versionNumber);
+                    if (dataType == null)
+                        return helper.createReturnValue("400", "Version does not exist");
+                    else {
+                        return helper.createReturnValue("200", dataType.toString());
+                    }
+                }
+
+        return helper.createReturnValue("400", "Attribute does not exist");
     }
 
     /**
@@ -220,15 +242,15 @@ public class MFContract implements ContractInterface {
     public String META_readMetaDefOfProduct(Context ctx, String product) {
 
         if (!helper.objectExists(ctx, META_DEF_ID))
-            return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID + " does not exist");
+            return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID
+                    + " does not exist");
 
         MetaDef metaDef = helper.getMetaDef(ctx);
 
         List<MetaDef.AssetDefinition> assetDefinitions = metaDef.getAssetDefinitions();
-        for(MetaDef.AssetDefinition assetDefinition : assetDefinitions) {
-            if(assetDefinition.getName().equalsIgnoreCase(product))
-                return helper.createReturnValue("200",
-                        new JSONObject(new Gson().toJson(assetDefinition)));
+        for (MetaDef.AssetDefinition assetDefinition : assetDefinitions) {
+            if (assetDefinition.getName().equalsIgnoreCase(product))
+                return helper.createSuccessReturnValue(assetDefinition);
         }
         return helper.createReturnValue("400", "Product does not exist");
 
@@ -248,7 +270,7 @@ public class MFContract implements ContractInterface {
 
         MetaDef metaDef = helper.getMetaDef(ctx);
 
-        return helper.createReturnValue("200", metaDef.toJSON());
+        return helper.createSuccessReturnValue(metaDef.toJSON());
     }
 
     @Transaction()
@@ -260,7 +282,7 @@ public class MFContract implements ContractInterface {
         if (!metaDef.deleteAssetDefinition(name))
             return helper.createReturnValue("400", "The product with name " + name + " doesn't exist");
         helper.putState(ctx, META_DEF_ID, metaDef);
-        return helper.createReturnValue("200", metaDef.toJSON());
+        return helper.createSuccessReturnValue(metaDef.toJSON());
     }
 
     /**
@@ -288,7 +310,7 @@ public class MFContract implements ContractInterface {
         metaDef.addAttributeDefinition(attribute, dataType);
         helper.putState(ctx, META_DEF_ID, metaDef);
 
-        return helper.createReturnValue("200", metaDef.toJSON());
+        return helper.createSuccessReturnValue(metaDef.toJSON());
 
     }
 
@@ -342,7 +364,7 @@ public class MFContract implements ContractInterface {
         metaDef.addAssetDefinition(productName, acceptedAttributeNames, acceptedAttributes);
         helper.putState(ctx, META_DEF_ID, metaDef);
 
-        return helper.createReturnValue("200", metaDef.toJSON());
+        return helper.createSuccessReturnValue(metaDef.toJSON());
     }
 
     /**
@@ -366,7 +388,7 @@ public class MFContract implements ContractInterface {
         metaDef.addUnitToUnitList(unit);
         helper.putState(ctx, META_DEF_ID, metaDef);
 
-        return helper.createReturnValue("200", metaDef.toJSON());
+        return helper.createSuccessReturnValue(metaDef.toJSON());
     }
 
 
@@ -441,7 +463,7 @@ public class MFContract implements ContractInterface {
                 int index = attributeNames.indexOf(allowedDefinition.getName());
                 if (index < 0)
                     continue;
-                if (allowedDefinition.getDataType().equalsIgnoreCase("Integer")
+                if (allowedDefinition.getDataType().equals(MetaDef.AttributeDataType.Integer)
                         && !attributeValues.get(index).matches("-?\\d+"))
                     return helper.createReturnValue("400", "The attribute "
                             + allowedDefinition.getName() + " is not an Integer");
@@ -450,13 +472,19 @@ public class MFContract implements ContractInterface {
                 attributeNames.remove(index);
             } else if (isPdc && privateAttributes.contains(allowedDefinition.getName())) {
                 String value = new String(transientData.get(allowedDefinition.getName()), StandardCharsets.UTF_8);
-                if (allowedDefinition.getDataType().equalsIgnoreCase("Integer")
+                if (allowedDefinition.getDataType().equals(MetaDef.AttributeDataType.Integer)
                         && !value.matches("-?\\d+"))
                     return helper.createReturnValue("400", "The attribute "
                             + allowedDefinition.getName() + " is not an Integer");
                 if (privateMetaObject == null)
                     privateMetaObject = new PrivateMetaObject();
-                privateMetaObject.addAttribute(allowedDefinition.getName(), allowedDefinition.getVersion(), value);
+                try {
+                    privateMetaObject.addAttribute(allowedDefinition.getName(), allowedDefinition.getVersion(), value, allowedDefinition.getDataType());
+                } catch (NumberFormatException e) {
+                    return helper.createReturnValue("400", "Parsing Error: Could not parse the number");
+                } catch (JsonSyntaxException e) {
+                    return helper.createReturnValue("400", "Parsing Error: Could not parse the Json Array");
+                }
                 privateAttributes.remove(allowedDefinition.getName());
             } else
                 return helper.createReturnValue("400", "The attribute "
@@ -502,11 +530,17 @@ public class MFContract implements ContractInterface {
             helper.putPrivateData(ctx, pdc, id + PDC_STRING, privateMetaObject);
 
         String timeStamp = ctx.getStub().getTxTimestamp().toString();
-        MetaObject metaObject = new MetaObject(isPdc ? pdc : "", productDefinition.getName(), productDefinition.getVersion(), amountDouble, unit, acceptedAttr, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
-        metaObject.setKey(id);
-        helper.putState(ctx, id, metaObject);
+        try {
+            MetaObject metaObject = new MetaObject(isPdc ? pdc : "", productDefinition.getName(), productDefinition.getVersion(), amountDouble, unit, acceptedAttr, attrValues, timeStamp, ctx.getClientIdentity().getMSPID());
+            metaObject.setKey(id);
+            helper.putState(ctx, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toJSON());
+            return helper.createSuccessReturnValue(metaObject.toJSON());
+        } catch (NumberFormatException e) {
+            return helper.createReturnValue("400", "Parsing Error: Could not parse the number");
+        } catch (JsonSyntaxException e) {
+            return helper.createReturnValue("400", "Parsing Error: Could not parse the Json Array");
+        }
     }
 
     /**
@@ -524,16 +558,17 @@ public class MFContract implements ContractInterface {
 
         MetaObject metaObject = helper.getMetaObject(ctx, id);
 
-        ArrayList<MetaAttribute> pdcList = new ArrayList<>();
+        ArrayList<MetaAttribute<?>> pdcList = new ArrayList<>();
 
         for (String pdc : metaObject.getPrivateDataCollection()) {
             PrivateMetaObject privateMetaObject = helper.getPrivateMetaObject(ctx, pdc, id + PDC_STRING);
             pdcList.addAll(privateMetaObject.getAttributes());
         }
-        JSONObject returnValue = metaObject.toJSON();
-        returnValue.put("privateData", new JSONObject(pdcList));
+        JsonObject returnValue = metaObject.toJSON();
+        returnValue.add("privateData", new Gson().fromJson(new Gson().toJson(pdcList.toArray()),
+                JsonArray.class));
 
-        return helper.createReturnValue("200", returnValue);
+        return helper.createSuccessReturnValue(returnValue);
     }
 
     /**
@@ -558,7 +593,7 @@ public class MFContract implements ContractInterface {
         metaObject.setReceiver(receiver);
         helper.putState(ctx, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toJSON());
+        return helper.createSuccessReturnValue(metaObject.toJSON());
     }
 
     /**
@@ -585,7 +620,7 @@ public class MFContract implements ContractInterface {
         metaObject.setActualOwner(newOwner);
         helper.putState(ctx, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toJSON());
+        return helper.createSuccessReturnValue(metaObject.toJSON());
     }
 
     /**
@@ -626,7 +661,7 @@ public class MFContract implements ContractInterface {
         metaObject.addPredecessor(predecessorId, amountDif.substring(1) + " " + preMetaObject.getUnit() + " " + preMetaObject.getProductName());
         helper.putState(ctx, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toJSON());
+        return helper.createSuccessReturnValue(metaObject.toJSON());
     }
 
     /**
@@ -657,12 +692,18 @@ public class MFContract implements ContractInterface {
             for (MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
                 if (attributeList.contains(attributeDefinition.getName())) {
                     int index = attributeList.indexOf(attributeDefinition.getName());
-                    if (attributeDefinition.getDataType().equals("Integer")
+                    if (attributeDefinition.getDataType().equals(MetaDef.AttributeDataType.Integer)
                             && !attributeValues.get(index).matches("-?\\d+"))
                         return helper.createReturnValue("400", "The attribute "
                                 + attributeDefinition.getName() + " is not an Integer");
-                    metaObject.addAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(),
-                            attributeValues.get(index));
+                    try {
+                        metaObject.addAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(),
+                                attributeValues.get(index), attributeDefinition.getDataType());
+                    } catch (NumberFormatException e) {
+                        return helper.createReturnValue("400", "Parsing Error: Could not parse the number");
+                    } catch (JsonSyntaxException e) {
+                        return helper.createReturnValue("400", "Parsing Error: Could not parse the Json Array");
+                    }
                     attributeValues.remove(index);
                     attributeList.remove(attributeDefinition.getName());
                 }
@@ -686,7 +727,7 @@ public class MFContract implements ContractInterface {
 
         helper.putState(ctx, id, metaObject);
 
-        return helper.createReturnValue("200", metaObject.toJSON());
+        return helper.createSuccessReturnValue(metaObject.toJSON());
     }
 
     /**
@@ -696,10 +737,9 @@ public class MFContract implements ContractInterface {
      * @param id  the id of the object
      * @param pdc the private data collection to store the private data
      * @return the object
-     * @throws UnsupportedEncodingException if private object can't be decoded
      */
     @Transaction()
-    public String updatePrivateAttribute(Context ctx, String id, String pdc) throws UnsupportedEncodingException {
+    public String updatePrivateAttribute(Context ctx, String id, String pdc) {
 
         if (!helper.objectExists(ctx, id))
             return helper.createReturnValue("400", "The object with the key " + id + " does not exist");
@@ -724,13 +764,20 @@ public class MFContract implements ContractInterface {
         for (MetaDef.AttributeDefinition attributeDefinition : allowedAttr) {
             if (privateAttributes.contains(attributeDefinition.getName())) {
                 String value = new String(transientData.get(attributeDefinition.getName()), StandardCharsets.UTF_8);
-                if (attributeDefinition.getDataType().equals("Integer")
+                if (attributeDefinition.getDataType().equals(MetaDef.AttributeDataType.Integer)
                         && !value.matches("-?\\d+"))
                     return helper.createReturnValue("400", "The attribute "
                             + attributeDefinition.getName() + " is not an Integer");
                 if (privateMetaObject == null)
                     privateMetaObject = new PrivateMetaObject();
-                privateMetaObject.addAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(), value);
+                try {
+                    privateMetaObject.addAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(), value,
+                            attributeDefinition.getDataType());
+                } catch (NumberFormatException e) {
+                    return helper.createReturnValue("400", "Parsing Error: Could not parse the number");
+                } catch (JsonSyntaxException e) {
+                    return helper.createReturnValue("400", "Parsing Error: Could not parse the Json Array");
+                }
                 privateAttributes.remove(attributeDefinition.getName());
             }
         }
@@ -740,7 +787,7 @@ public class MFContract implements ContractInterface {
         }
 
         helper.putPrivateData(ctx, pdc, id + PDC_STRING, privateMetaObject);
-        return helper.createReturnValue("200", privateMetaObject.toJSON());
+        return helper.createSuccessReturnValue(privateMetaObject.toJSON());
     }
 
     /* #endregion */
@@ -775,7 +822,7 @@ public class MFContract implements ContractInterface {
         }
         helper.emitEvent(ctx, "alarm_activated", metaObject.toString().getBytes());
 
-        return helper.createReturnValue("200", metaObject.toJSON());
+        return helper.createSuccessReturnValue(metaObject.toJSON());
     }
 
     /**
@@ -805,7 +852,7 @@ public class MFContract implements ContractInterface {
             helper.putState(ctx, suc.x, metaObject);
         }
 
-        return helper.createReturnValue("200", metaObject.toJSON());
+        return helper.createSuccessReturnValue(metaObject.toJSON());
     }
     /*
     /**

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Gradle: io.grpc:grpc-context:1.23.0">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/io/grpc/grpc-context/1.23.0/grpc-context-1.23.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

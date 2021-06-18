@@ -1,9 +1,9 @@
 package de.metahlfabric;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.hyperledger.fabric.contract.annotation.DataType;
 import org.hyperledger.fabric.contract.annotation.Property;
-import org.json.JSONObject;
 
 import javax.management.AttributeNotFoundException;
 import java.util.ArrayList;
@@ -32,6 +32,7 @@ import java.util.List;
 public class MetaDef {
 
     private enum ChangeType {ADD, DELETE}
+    public enum AttributeDataType {Integer, Float, String, IntegerArray, FloatArray, StringArray}
 
     @Property
     ArrayList<AttributeDefinition> attributeDefinitions;
@@ -73,25 +74,52 @@ public class MetaDef {
     }
 
     /**
-     * @param attribute get data type for this attribute
-     * @return the data typ for the specified attribute
-     */
-    public String getDataTypeByAttribute(String attribute) {
-        for (AttributeDefinition attributeDefinition : this.attributeDefinitions) {
-            if (attributeDefinition.name.equalsIgnoreCase(attribute))
-                return attributeDefinition.dataType;
-        }
-        return "attribute not found";
-    }
-
-    /**
      * @param attribute the attribute to add
      * @param dataType  the data type of the attribute to add
      */
     public void addAttributeDefinition(String attribute, String dataType) {
+        AttributeDataType mDataType;
+        switch (dataType) {
+            case "Integer":
+            case "int":
+            case "Long":
+            case "long":
+                mDataType = AttributeDataType.Integer;
+                break;
+            case "Float":
+            case "float":
+            case "Double":
+            case "double":
+                mDataType = AttributeDataType.Float;
+                break;
+            case "Array":
+            case "StringArray":
+            case "ArrayOfString":
+                mDataType = AttributeDataType.StringArray;
+                break;
+            case "intArray":
+            case "IntegerArray":
+            case "ArrayOfInt":
+            case "ArrayOfInteger":
+            case "longArray":
+            case "LongArray":
+            case "ArrayOfLong":
+                mDataType = AttributeDataType.IntegerArray;
+                break;
+            case "floatArray":
+            case "FloatArray":
+            case "ArrayOfFloat":
+            case "doubleArray":
+            case "DoubleArray":
+            case "ArrayOfDouble":
+                mDataType = AttributeDataType.FloatArray;
+                break;
+            default:
+                mDataType = AttributeDataType.String;
+        }
         for (AttributeDefinition attributeDefinition : this.attributeDefinitions)
             if (attributeDefinition.getName().equalsIgnoreCase(attribute)) {
-                attributeDefinition.setDataType(dataType);
+                attributeDefinition.setDataType(mDataType);
                 for (AssetDefinition assetDefinition : this.assetDefinitions) {
                     for (AttributeDefinition oldAttributeDefinition : assetDefinition.getAttributes()) {
                         if (oldAttributeDefinition.getName().equalsIgnoreCase(attribute)) {
@@ -106,18 +134,7 @@ public class MetaDef {
                 }
                 return;
             }
-        this.attributeDefinitions.add(new AttributeDefinition(attribute, dataType));
-    }
-
-    /**
-     * @param attribute the attribute to check
-     * @return true if the attribute exits
-     */
-    public boolean attributeExists(String attribute) {
-        for (AttributeDefinition attributeDefinition : this.attributeDefinitions)
-            if (attributeDefinition.getName().equalsIgnoreCase(attribute))
-                return true;
-        return false;
+        this.attributeDefinitions.add(new AttributeDefinition(attribute, mDataType));
     }
 
     /**
@@ -125,17 +142,6 @@ public class MetaDef {
      */
     public List<AssetDefinition> getAssetDefinitions() {
         return this.assetDefinitions;
-    }
-
-    /**
-     * @param assetName get attributes of this product
-     * @return the attributes of the specified product
-     */
-    public List<AttributeDefinition> getAttributesByAssetName(String assetName) {
-        for (AssetDefinition assetDefinition : this.assetDefinitions)
-            if (assetDefinition.getName().equalsIgnoreCase(assetName))
-                return assetDefinition.getAttributes();
-        return null;
     }
 
     /**
@@ -214,8 +220,8 @@ public class MetaDef {
     /**
      * @return the json object
      */
-    public JSONObject toJSON() {
-        return new JSONObject(this.toJSONString());
+    public JsonObject toJSON() {
+        return new Gson().fromJson(this.toJSONString(), JsonObject.class);
     }
 
     @DataType
@@ -224,20 +230,20 @@ public class MetaDef {
         @Property
         private final String name;
         @Property
-        private final ArrayList<String> dataTypeHistory;
+        private final ArrayList<AttributeDataType> dataTypeHistory;
         @Property
-        private String dataType;
+        private AttributeDataType dataType;
         @Property
         private Integer version;
 
-        public AttributeDefinition(String name, String dataType) {
+        public AttributeDefinition(String name, AttributeDataType dataType) {
             this.dataTypeHistory = new ArrayList<>();
             this.name = name;
             this.dataType = dataType;
             this.version = 1;
         }
 
-        public void setDataType(String dataType) {
+        public void setDataType(AttributeDataType dataType) {
             this.dataTypeHistory.add(this.dataType);
             this.dataType = dataType;
             this.version++;
@@ -251,11 +257,11 @@ public class MetaDef {
             return this.name;
         }
 
-        public String getDataType() {
+        public AttributeDataType getDataType() {
             return this.dataType;
         }
 
-        public String getDataType(int version) {
+        public AttributeDataType getDataType(int version) {
             if (version == this.version)
                 return dataType;
             else if (version > this.version || version < 1)
@@ -336,14 +342,6 @@ public class MetaDef {
                 throw new AttributeNotFoundException("Attempt to remove an attribute which is not in the attribute list!");
             this.changeHistory.add(new AttributeChange(ChangeType.DELETE, attribute));
             this.version++;
-        }
-
-        boolean hasAttribute(String name) {
-            for (AttributeDefinition attributeDefinition : this.attributes) {
-                if (attributeDefinition.getName().equalsIgnoreCase(name))
-                    return true;
-            }
-            return false;
         }
 
         Integer getVersion() {

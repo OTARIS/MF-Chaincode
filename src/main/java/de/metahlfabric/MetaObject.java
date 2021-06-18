@@ -1,10 +1,9 @@
 package de.metahlfabric;
 
-import com.google.gson.Gson;
+import com.google.gson.*;
 import de.metahlfabric.MetaDef.AttributeDefinition;
 import org.hyperledger.fabric.contract.annotation.DataType;
 import org.hyperledger.fabric.contract.annotation.Property;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,13 +40,13 @@ public class MetaObject {
      * The actual amount of this object
      */
     @Property()
-    double amount = 0;
+    double amount;
 
     /**
      * The unit belonging to the amount
      */
     @Property()
-    String unit = "";
+    String unit;
 
     /**
      * The alarm flag of this object (is there a problem with this object?)
@@ -59,10 +58,10 @@ public class MetaObject {
      * The product name (which has to be defined in the MetaDef) of this object
      */
     @Property()
-    String productName = "";
+    String productName;
 
     @Property
-    Integer productVersion = 1;
+    Integer productVersion;
 
     /**
      * The receiver of this object
@@ -74,7 +73,7 @@ public class MetaObject {
      * The actual owner of this object
      */
     @Property()
-    String actualOwner = "";
+    String actualOwner;
 
     /**
      * The list of all private data collections where private data corresponding to this object is stored
@@ -104,13 +103,7 @@ public class MetaObject {
      * The list of attributes defined in this object
      */
     @Property()
-    ArrayList<MetaAttribute> attributes = new ArrayList<>();
-
-    /**
-     * Empty class constructor
-     */
-    public MetaObject() {
-    }
+    ArrayList<MetaAttribute<?>> attributes = new ArrayList<>();
 
     /**
      * Class constructor
@@ -124,7 +117,8 @@ public class MetaObject {
      * @param timeStamp            the time of the creation (auto generated)
      * @param owner                the initial owner of this object
      */
-    public MetaObject(String pdc, String productName, Integer productVersion, double amount, String unit, List<AttributeDefinition> attributeDefinitions, String[] attrValues, String timeStamp, String owner) {
+    public MetaObject(String pdc, String productName, Integer productVersion, double amount, String unit, List<AttributeDefinition> attributeDefinitions, String[] attrValues, String timeStamp, String owner)
+            throws NumberFormatException, JsonSyntaxException {
         this.productName = productName;
         this.productVersion = productVersion;
         if (!pdc.equals("") && !pdc.equals("null")) {
@@ -132,7 +126,41 @@ public class MetaObject {
         }
         int i = 0;
         for (AttributeDefinition attributeDefinition : attributeDefinitions) {
-            attributes.add(new MetaAttribute(attributeDefinition.getName(), attributeDefinition.getVersion(), attrValues[i]));
+            switch (attributeDefinition.getDataType()) {
+                case Integer:
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), Long.parseLong(attrValues[i])));
+                    break;
+                case Float:
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), Double.parseDouble(attrValues[i])));
+                    break;
+                case String:
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), attrValues[i]));
+                    break;
+                case IntegerArray:
+                    ArrayList<Long> array = new ArrayList<>();
+                    JsonArray jsonArray = new Gson().fromJson(attrValues[i], JsonArray.class);
+                    for(JsonElement number : jsonArray) {
+                        array.add(number.getAsLong());
+                    }
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), array));
+                    break;
+                case FloatArray:
+                    ArrayList<Double> array2 = new ArrayList<>();
+                    JsonArray jsonArray2 = new Gson().fromJson(attrValues[i], JsonArray.class);
+                    for(JsonElement number : jsonArray2) {
+                        array2.add(number.getAsDouble());
+                    }
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), array2));
+                    break;
+                case StringArray:
+                    ArrayList<String> array3 = new ArrayList<>();
+                    JsonArray jsonArray3 = new Gson().fromJson(attrValues[i], JsonArray.class);
+                    for(JsonElement text : jsonArray3) {
+                        array3.add(text.getAsString());
+                    }
+                    attributes.add(new MetaAttribute<>(attributeDefinition.getName(), attributeDefinition.getVersion(), array3));
+                    break;
+            }
             i++;
         }
         tsAndOwner.add(new Tuple<>(timeStamp, owner));
@@ -146,20 +174,6 @@ public class MetaObject {
      */
     public void setKey(String key) {
         this.key = key;
-    }
-
-    /**
-     * @return the key where to find the object
-     */
-    public String getKey() {
-        return key;
-    }
-
-    /**
-     * @param amount the amount to set
-     */
-    public void setAmount(double amount) {
-        this.amount = amount;
     }
 
     /**
@@ -177,24 +191,10 @@ public class MetaObject {
     }
 
     /**
-     * @param unit the unit to set
-     */
-    public void setUnit(String unit) {
-        this.unit = unit;
-    }
-
-    /**
      * @return the unit definition
      */
     public String getUnit() {
         return unit;
-    }
-
-    /**
-     * @return the alarmFlag
-     */
-    public boolean getAlarmFlag() {
-        return alarmFlag;
     }
 
     /**
@@ -211,19 +211,8 @@ public class MetaObject {
         return productName;
     }
 
-    /**
-     * @param productName the product name to set
-     */
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
     public Integer getProductVersion() {
         return this.productVersion;
-    }
-
-    public void setProductVersion(Integer version) {
-        this.productVersion = version;
     }
 
     /**
@@ -248,13 +237,6 @@ public class MetaObject {
     }
 
     /**
-     * @param pdc the private data collection to set
-     */
-    public void setPrivateDataCollection(ArrayList<String> pdc) {
-        privateDataCollection = pdc;
-    }
-
-    /**
      * @param pdc the pdc to add
      */
     public void addPrivateDataCollection(String pdc) {
@@ -273,13 +255,6 @@ public class MetaObject {
      */
     public void setActualOwner(String owner) {
         actualOwner = owner;
-    }
-
-    /**
-     * @return the map of predecessors
-     */
-    public ArrayList<Tuple<String, String>> getPredecessor() {
-        return predecessor;
     }
 
     /**
@@ -306,13 +281,6 @@ public class MetaObject {
     }
 
     /**
-     * @return the map of timestamp and owner
-     */
-    public ArrayList<Tuple<String, String>> getTsAndOwner() {
-        return tsAndOwner;
-    }
-
-    /**
      * @param timeStamp the timestamp to add
      * @param owner     the owner corresponding to the timestamp
      */
@@ -321,26 +289,54 @@ public class MetaObject {
     }
 
     /**
-     * @return the map of attributes names and attribute values
-     */
-    public ArrayList<MetaAttribute> getAttributes() {
-        return attributes;
-    }
-
-    /**
      * @param attrName  the attribute name to add
      * @param attrValue the attribute value to add
      */
-    public void addAttribute(String attrName, int version, String attrValue) {
+    public void addAttribute(String attrName, int version, String attrValue, MetaDef.AttributeDataType type)
+            throws NumberFormatException, JsonSyntaxException {
         this.deleteAttribute(attrName);
-        attributes.add(new MetaAttribute(attrName, version, attrValue));
+        switch (type) {
+            case Integer:
+                attributes.add(new MetaAttribute<>(attrName, version, Long.parseLong(attrValue)));
+                break;
+            case Float:
+                attributes.add(new MetaAttribute<>(attrName, version, Double.parseDouble(attrValue)));
+                break;
+            case String:
+                attributes.add(new MetaAttribute<>(attrName, version, attrValue));
+                break;
+            case IntegerArray:
+                ArrayList<Long> array = new ArrayList<>();
+                JsonArray jsonArray = new Gson().fromJson(attrValue, JsonArray.class);
+                for (JsonElement number : jsonArray) {
+                    array.add(number.getAsLong());
+                }
+                attributes.add(new MetaAttribute<>(attrName, version, array));
+                break;
+            case FloatArray:
+                ArrayList<Double> array2 = new ArrayList<>();
+                JsonArray jsonArray2 = new Gson().fromJson(attrValue, JsonArray.class);
+                for (JsonElement number : jsonArray2) {
+                    array2.add(number.getAsDouble());
+                }
+                attributes.add(new MetaAttribute<>(attrName, version, array2));
+                break;
+            case StringArray:
+                ArrayList<String> array3 = new ArrayList<>();
+                JsonArray jsonArray3 = new Gson().fromJson(attrValue, JsonArray.class);
+                for (JsonElement text : jsonArray3) {
+                    array3.add(text.getAsString());
+                }
+                attributes.add(new MetaAttribute<>(attrName, version, array3));
+                break;
+        }
     }
 
     /**
      * @param attrName the attribute to delete
      */
     public void deleteAttribute(String attrName) {
-        for (MetaAttribute attribute : this.attributes) {
+        for (MetaAttribute<?> attribute : this.attributes) {
             if (attribute.name.equalsIgnoreCase(attrName)) {
                 attributes.remove(attribute);
                 return;
@@ -365,8 +361,8 @@ public class MetaObject {
     /**
      * @return the json object
      */
-    public JSONObject toJSON() {
-        return new JSONObject(this.toJSONString());
+    public JsonObject toJSON() {
+        return new Gson().fromJson(this.toJSONString(), JsonObject.class);
     }
 
     @DataType
@@ -384,7 +380,7 @@ public class MetaObject {
 
         @Override
         public boolean equals(Object obj) {
-            return (obj instanceof Tuple && ((Tuple) obj).x.equals(this.x) && ((Tuple) obj).y.equals(this.y));
+            return (obj instanceof Tuple && ((Tuple<?, ?>) obj).x.equals(this.x) && ((Tuple<?, ?>) obj).y.equals(this.y));
         }
     }
 

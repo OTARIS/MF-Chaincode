@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Gradle: org.hyperledger.fabric-chaincode-java:fabric-chaincode-protos:1.4.6">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/hyperledger/fabric-chaincode-java/fabric-chaincode-protos/1.4.6/fabric-chaincode-protos-1.4.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
