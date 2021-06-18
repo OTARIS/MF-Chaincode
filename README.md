@@ -43,4 +43,5 @@ For easy use to the chain code, do not forget to check out the [MetaHL Fabric RE
 
 ## Third party ##
 
-TODO!
+- Hyperledger® Fabric (Apache 2.0)
+- Google® GSON (Apache 2.0)
