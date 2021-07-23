@@ -67,105 +67,18 @@ public class MFContract implements ContractInterface {
     public MFContract() {
     }
 
-    /* #region utils */
-
-    /**
-     * Query the local state database (Couch DB query indexes)
-     *
-     * @param ctx         the hyperledger context object
-     * @param queryString the query string
-     * @return a list of all objects that fulfill the condition
-     */
-    @Transaction
-    public String queryChaincodeByQueryString(Context ctx, String queryString) {
-        QueryResultsIterator<KeyValue> result = ctx.getStub().getQueryResult(queryString);
-        Iterator<KeyValue> it = result.iterator();
-        JsonArray jsonArray = new JsonArray();
-        while (it.hasNext()) {
-            jsonArray.add(new Gson().fromJson(new String(it.next().getValue(), StandardCharsets.UTF_8), JsonObject.class));
-        }
-        return helper.createSuccessReturnValue(jsonArray);
-    }
-
-    /**
-     * Checks if an object to the given id exists
-     *
-     * @param ctx the Hyperledger context object
-     * @param id  the id to check
-     * @return true, if the object exists
-     */
-    @Transaction
-    public String objectExists(Context ctx, String id) {
-        byte[] buffer = ctx.getStub().getState(id);
-        return helper.createSuccessReturnValue(buffer != null && buffer.length > 0);
-    }
-
-    /**
-     * Checks if a private object to the given id exists
-     *
-     * @param ctx the Hyperledger context object
-     * @param id  the id to check
-     * @param pdc the private data collection to check
-     * @return true, if the private object exists (and we are allowed to see it)
-     */
-    @Transaction()
-    public String privateObjectExists(Context ctx, String id, String pdc) {
-        byte[] buffer = ctx.getStub().getPrivateDataHash(pdc, id);
-        return helper.createSuccessReturnValue(buffer != null && buffer.length > 0);
-    }
-
-    /**
-     * Deletes the object
-     *
-     * @param ctx the Hyperledger context object
-     * @param id  the id to delete
-     * @return 200, if object was deleted; 400, if the object does not exist
-     */
-    @Transaction()
-    public String deleteObject(Context ctx, String id) {
-        if (!helper.objectExists(ctx, id))
-            return helper.createReturnValue("400", "The object with the key " + id + " does not exist");
-        MetaObject metaObject = helper.getMetaObject(ctx, id);
-        for (String pdc : metaObject.getPrivateDataCollection()) {
-            deletePrivateObject(ctx, id + PDC_STRING, pdc);
-        }
-        ctx.getStub().delState(id);
-        return helper.createReturnValue("200", "The object with the key " + id + " was deleted");
-    }
-
-    /**
-     * Deletes the private object
-     *
-     * @param ctx the Hyperledger context object
-     * @param id  the id to delete
-     * @param pdc the private data collection where to find the object
-     * @return 200, if object was deleted; 400, if the object does not exist (or we are not allowed to delete it)
-     */
-    @Transaction()
-    public String deletePrivateObject(Context ctx, String id, String pdc) {
-
-        if (!helper.privateObjectExists(ctx, id, pdc))
-            return helper.createReturnValue("400", "The object with the key " + id + " does not exist in the private data collection " + pdc);
-
-        ctx.getStub().delPrivateData(pdc, id);
-
-        return helper.createReturnValue("200", "The object with the key " + id + " was deleted from the private data collection " + pdc);
-    }
-
-    /* #endregion */
-
     /* #region META definitions */
 
     /**
      * Reads the meta def
      *
      * @param ctx     the Hyperledger context object
-     * @param product the name of the product
+     * @param asset the name of the product
      * @param version the version of the meta definition
      * @return the meta def
      */
     @Transaction()
-    public String META_getAttributesOfProductWithVersion(Context ctx, String product, String version) {
+    public String getAttributeDefinitionsOfAsset(Context ctx, String asset, String version) {
         if (!helper.objectExists(ctx, META_DEF_ID))
             return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID
                     + " does not exist");
@@ -178,11 +91,11 @@ public class MFContract implements ContractInterface {
 
         MetaDef metaDef = helper.getMetaDef(ctx);
 
-        List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributesByAssetNameAndVersion(product,
+        List<MetaDef.AttributeDefinition> attributeDefinitions = metaDef.getAttributesByAssetNameAndVersion(asset,
                 versionNumber);
 
         if (attributeDefinitions == null) {
-            if (!metaDef.assetNameExists(product))
+            if (!metaDef.assetNameExists(asset))
                 return helper.createReturnValue("400", "Product does not exist");
             else
                 return helper.createReturnValue("400", "Version does not exist");
@@ -203,7 +116,7 @@ public class MFContract implements ContractInterface {
      * @return the meta def
      */
     @Transaction()
-    public String META_getDataTypeOfAttributeWithVersion(Context ctx, String attribute, String version) {
+    public String getDataTypeOfAttributeDefinition(Context ctx, String attribute, String version) {
         if (!helper.objectExists(ctx, META_DEF_ID))
             return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID
                     + " does not exist");
@@ -239,7 +152,7 @@ public class MFContract implements ContractInterface {
      * @return the meta def
      */
     @Transaction()
-    public String META_readMetaDefOfProduct(Context ctx, String product) {
+    public String getAssetDefinition(Context ctx, String product) {
 
         if (!helper.objectExists(ctx, META_DEF_ID))
             return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID
@@ -263,7 +176,7 @@ public class MFContract implements ContractInterface {
      * @return the meta def
      */
     @Transaction()
-    public String META_readMetaDef(Context ctx) {
+    public String getDefinition(Context ctx) {
 
         if (!helper.objectExists(ctx, META_DEF_ID))
             return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID + " does not exist");
@@ -274,7 +187,7 @@ public class MFContract implements ContractInterface {
     }
 
     @Transaction()
-    public String META_deleteProduct(Context ctx, String name) {
+    public String removeAssetDefinition(Context ctx, String name) {
         if (!helper.objectExists(ctx, META_DEF_ID))
             return helper.createReturnValue("400", "The meta def with the key " + META_DEF_ID + " does not exist");
 
@@ -295,7 +208,7 @@ public class MFContract implements ContractInterface {
      * @return the meta def
      */
     @Transaction()
-    public String META_addAttributeDefinition(Context ctx, String attribute, String dataType) {
+    public String putAttributeDefinition(Context ctx, String attribute, String dataType) {
         MetaDef metaDef;
         if (!helper.objectExists(ctx, META_DEF_ID)) {
             metaDef = new MetaDef();
@@ -315,12 +228,12 @@ public class MFContract implements ContractInterface {
      * If no meta def exists, it will be created
      *
      * @param ctx         the Hyperledger context object
-     * @param productName the name of the new product
+     * @param name the name of the new product
      * @param attributes  the attributes of the new product
      * @return the meta def
      */
     @Transaction()
-    public String META_addProductDefinition(Context ctx, String productName, String[] attributes) {
+    public String putAssetDefinition(Context ctx, String name, String[] attributes) {
 
         MetaDef metaDef;
         if (!helper.objectExists(ctx, META_DEF_ID)) {
@@ -357,7 +270,7 @@ public class MFContract implements ContractInterface {
             }
         }
 
-        metaDef.addAssetDefinition(productName, acceptedAttributeNames, acceptedAttributes);
+        metaDef.addAssetDefinition(name, acceptedAttributeNames, acceptedAttributes);
         helper.putState(ctx, META_DEF_ID, metaDef);
 
         return helper.createSuccessReturnValue(metaDef.toJSON());
@@ -372,14 +285,14 @@ public class MFContract implements ContractInterface {
      * @return the meta def
      */
     @Transaction()
-    public String META_addUnit(Context ctx, String unit) {
+    public String addUnit(Context ctx, String unit) {
 
         MetaDef metaDef;
         if (!helper.objectExists(ctx, META_DEF_ID)) metaDef = new MetaDef();
         else metaDef = helper.getMetaDef(ctx);
 
         if (metaDef.getUnitList().contains(unit))
-            return helper.createReturnValue("400", "The unit " + unit + " is still defined");
+            return helper.createReturnValue("400", "The unit " + unit + " is already defined");
 
         metaDef.addUnitToUnitList(unit);
         helper.putState(ctx, META_DEF_ID, metaDef);
@@ -395,10 +308,10 @@ public class MFContract implements ContractInterface {
     /**
      * Creates a new object (Pass transient data, to create private attribute ("attribute":"value"))
      *
-     * @param ctx         the hyperledger context object
+     * @param ctx         the Hyperledger context object
      * @param id          the id of the object
      * @param pdc         the private data collection where to store the private data (empty if no private data necessary)
-     * @param productName the product name of this objects (defined in the MetaDef)
+     * @param definition  the definition of this object (defined in the MetaDef)
      * @param amount      the initial amount of this object
      * @param unit        the unit definition of this object
      * @param attributes  the names of all attributes (defined in the MetaDef)
@@ -406,7 +319,7 @@ public class MFContract implements ContractInterface {
      * @return the object
      */
     @Transaction()
-    public String createObject(Context ctx, String id, String pdc, String productName, String amount,
+    public String createAsset(Context ctx, String id, String pdc, String definition, String amount,
                                String unit, String[] attributes, String[] attrValues) {
 
         if (helper.objectExists(ctx, id))
@@ -417,11 +330,11 @@ public class MFContract implements ContractInterface {
         List<MetaDef.AssetDefinition> assetDefinitions = metaDef.getAssetDefinitions();
         MetaDef.AssetDefinition productDefinition = null;
         for (MetaDef.AssetDefinition assetDefinition : assetDefinitions)
-            if (assetDefinition.getName().equalsIgnoreCase(productName)) {
+            if (assetDefinition.getName().equalsIgnoreCase(definition)) {
                 productDefinition = assetDefinition;
             }
         if (productDefinition == null)
-            return helper.createReturnValue("400", "The product name " + productName + " is not defined");
+            return helper.createReturnValue("400", "The product name " + definition + " is not defined");
 
         if (!metaDef.getUnitList().contains(unit))
             return helper.createReturnValue("400", "The unit " + unit + " is not defined");
@@ -536,6 +449,25 @@ public class MFContract implements ContractInterface {
     }
 
     /**
+     * Deletes the object
+     *
+     * @param ctx the Hyperledger context object
+     * @param id  the id to delete
+     * @return 200, if object was deleted; 400, if the object does not exist
+     */
+    @Transaction()
+    public String deleteAsset(Context ctx, String id) {
+        if (!helper.objectExists(ctx, id))
+            return helper.createReturnValue("400", "The object with the key " + id + " does not exist");
+        MetaObject metaObject = helper.getMetaObject(ctx, id);
+        for (String pdc : metaObject.getPrivateDataCollection()) {
+            deletePrivateAttributes(ctx, id + PDC_STRING, pdc);
+        }
+        ctx.getStub().delState(id);
+        return helper.createReturnValue("200", "The object with the key " + id + " was deleted");
+    }
+
+    /**
      * Reads an object
      *
      * @param ctx the hyperledger context object
@@ -543,7 +475,7 @@ public class MFContract implements ContractInterface {
      * @return the object
      */
     @Transaction()
-    public String readObject(Context ctx, String id) {
+    public String getAsset(Context ctx, String id) {
 
         if (!helper.objectExists(ctx, id))
             return helper.createReturnValue("400", "The object with the key " + id + " does not exist");
@@ -561,6 +493,77 @@ public class MFContract implements ContractInterface {
                 JsonArray.class));
 
         return helper.createSuccessReturnValue(returnValue);
+    }
+
+
+
+    /**
+     * Query the local state database (Couch DB query indexes)
+     *
+     * @param ctx the Hyperledger context object
+     * @param query the query string
+     * @return a list of all objects that fulfill the condition
+     */
+    @Transaction
+    public String selectAsset(Context ctx, String query) {
+        QueryResultsIterator<KeyValue> result = ctx.getStub().getQueryResult(query);
+        Iterator<KeyValue> it = result.iterator();
+        JsonArray jsonArray = new JsonArray();
+        while (it.hasNext()) {
+            jsonArray.add(new Gson().fromJson(new String(it.next().getValue(), StandardCharsets.UTF_8), JsonObject.class));
+        }
+        return helper.createSuccessReturnValue(jsonArray);
+    }
+
+    /**
+     * Checks if an object to the given id exists
+     *
+     * @param ctx the Hyperledger context object
+     * @param id  the id to check
+     * @return true, if the object exists
+     */
+    @Transaction
+    public String containsAsset(Context ctx, String id) {
+        byte[] buffer = ctx.getStub().getState(id);
+        return helper.createSuccessReturnValue(buffer != null && buffer.length > 0);
+    }
+
+    /**
+     * Deletes the private object
+     *
+     * @param ctx the Hyperledger context object
+     * @param id  the id to delete
+     * @param pdc the private data collection where to find the object
+     * @return 200, if object was deleted; 400, if the object does not exist (or we are not allowed to delete it)
+     */
+    @Transaction()
+    public String deletePrivateAttributes(Context ctx, String id, String pdc) {
+
+        if (!helper.privateObjectExists(ctx, id, pdc))
+            return helper.createReturnValue("400", "The object with the key " + id + " does not exist in the private data collection " + pdc);
+
+        ctx.getStub().delPrivateData(pdc, id);
+
+        return helper.createReturnValue("200", "The object with the key " + id + " was deleted from the private data collection " + pdc);
+    }
+
+    /**
+     * Checks if a private object to the given id exists
+     *
+     * @param ctx the Hyperledger context object
+     * @param id  the asset id to check
+     * @param pdc the private data collection to check
+     * @return true, if the private object exists (and we are allowed to see it)
+     */
+    @Transaction()
+    public String hasPrivateAttributes(Context ctx, String id, String pdc) {
+        byte[] buffer1 = ctx.getStub().getState(id);
+        byte[] buffer2 = ctx.getStub().getPrivateDataHash(pdc, id);
+        boolean hasPrivateAttributes = buffer2 != null && buffer2.length > 0;
+        if(!(buffer1 != null && buffer1.length > 0 && hasPrivateAttributes)) {
+            helper.createReturnValue("400", "Asset does not exist.");
+        }
+        return helper.createSuccessReturnValue(hasPrivateAttributes);
     }
 
     /**
@@ -596,7 +599,7 @@ public class MFContract implements ContractInterface {
      * @return the object
      */
     @Transaction()
-    public String changeOwner(Context ctx, String id) {
+    public String setOwner(Context ctx, String id) {
 
         if (!helper.objectExists(ctx, id))
             return helper.createReturnValue("400", "The object with the key " + id + " does not exist");
@@ -666,7 +669,7 @@ public class MFContract implements ContractInterface {
      * @return the object
      */
     @Transaction()
-    public String updateAttribute(Context ctx, String id, String[] attrName, String[] attrValue) {
+    public String setAttribute(Context ctx, String id, String[] attrName, String[] attrValue) {
 
         if (!helper.objectExists(ctx, id))
             return helper.createReturnValue("400", "The object with the key " + id + " does not exist");
@@ -727,7 +730,7 @@ public class MFContract implements ContractInterface {
      * @return the object
      */
     @Transaction()
-    public String updatePrivateAttribute(Context ctx, String id, String pdc) {
+    public String setPrivateAttribute(Context ctx, String id, String pdc) {
 
         if (!helper.objectExists(ctx, id))
             return helper.createReturnValue("400", "The object with the key " + id + " does not exist");
@@ -788,8 +791,6 @@ public class MFContract implements ContractInterface {
     @Transaction()
     public String activateAlarm(Context ctx, String id) {
 
-        //TODO Prüfung auf Berechtigung
-
         if (!helper.objectExists(ctx, id))
             return helper.createReturnValue("400", "The object with the key " + id + " does not exist");
 
@@ -819,8 +820,6 @@ public class MFContract implements ContractInterface {
     @Transaction()
     public String deactivateAlarm(Context ctx, String id) {
 
-        //TODO Prüfung auf Berechtigung
-
         if (!helper.objectExists(ctx, id))
             return helper.createReturnValue("400", "The object with the key " + id + " does not exist");
 
@@ -838,39 +837,115 @@ public class MFContract implements ContractInterface {
 
         return helper.createSuccessReturnValue(metaObject.toJSON());
     }
-    /*
-    /**
-     * Exports the information of an alarm object to the auth collection
-     *
-     * @param ctx the hyperledger context object
-     * @param id the id of the object
-     *
-     * @return the object
-     */
-    /*
-    //not tested
-    @Transaction()
-    public String exportDataToAuthPDC(Context ctx, String id) throws UnsupportedEncodingException{
 
-        if (!helper.objectExists(ctx, id)) return helper.createReturnValue("400", "The object with the key " +id+ " does not exist");
-
-        MetaObject metaObject = helper.getMetaObject(ctx, id);
-       
-        if (!metaObject.getAlarmFlag() == true) return helper.createReturnValue("400", "The alarm flag for " +id+  "is set to false");
-        
-        
-        if (metaObject.getPrivateDataCollection().length() > 2){
-            PrivateMetaObject privateMetaObject = helper.getPrivateMetaObject(ctx, metaObject.getPrivateDataCollection(), id + PDC_STRING);
-            metaObject.addAllAttributes(privateMetaObject.getAttributes());
-        }
-
-        metaObject.setPrivateDataCollection("");
-        helper.putPrivateData(ctx, AUTHORITY_PDC, id, metaObject);
-
-        return helper.createReturnValue("200", metaObject.toString());       
+    @Deprecated
+    @Transaction
+    public String queryChaincodeByQueryString(Context ctx, String queryString) {
+        return this.selectAsset(ctx, queryString);
     }
-    */
 
-    /* #endregion */
+    @Deprecated
+    @Transaction
+    public String objectExists(Context ctx, String id) {
+        return this.containsAsset(ctx, id);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String privateObjectExists(Context ctx, String id, String pdc) {
+        return this.hasPrivateAttributes(ctx, id, pdc);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String deleteObject(Context ctx, String id) {
+        return this.deleteAsset(ctx, id);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String deletePrivateObject(Context ctx, String id, String pdc) {
+        return this.deletePrivateAttributes(ctx, id, pdc);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String META_getAttributesOfProductWithVersion(Context ctx, String product, String version) {
+        return this.getAttributeDefinitionsOfAsset(ctx, product, version);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String META_getDataTypeOfAttributeWithVersion(Context ctx, String attribute, String version) {
+        return this.getDataTypeOfAttributeDefinition(ctx, attribute, version);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String META_readMetaDefOfProduct(Context ctx, String product) {
+        return this.getAssetDefinition(ctx, product);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String META_readMetaDef(Context ctx) {
+        return this.getDefinition(ctx);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String META_deleteProduct(Context ctx, String name) {
+        return this.removeAssetDefinition(ctx, name);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String META_addAttributeDefinition(Context ctx, String attribute, String dataType) {
+        return this.putAttributeDefinition(ctx, attribute, dataType);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String META_addProductDefinition(Context ctx, String productName, String[] attributes) {
+        return this.putAssetDefinition(ctx, productName, attributes);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String META_addUnit(Context ctx, String unit) {
+        return this.addUnit(ctx, unit);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String createObject(Context ctx, String id, String pdc, String productName, String amount,
+                               String unit, String[] attributes, String[] attrValues) {
+        return this.createAsset(ctx, id, pdc, productName, amount, unit, attributes, attrValues);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String readObject(Context ctx, String id) {
+        return this.getAsset(ctx, id);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String changeOwner(Context ctx, String id) {
+        return this.setOwner(ctx, id);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String updateAttribute(Context ctx, String id, String[] attrName, String[] attrValue) {
+        return this.setAttribute(ctx, id, attrName, attrValue);
+    }
+
+    @Deprecated
+    @Transaction()
+    public String updatePrivateAttribute(Context ctx, String id, String pdc) {
+        return this.setPrivateAttribute(ctx, id, pdc);
+    }
+
 }
 
