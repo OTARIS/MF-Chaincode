@@ -495,7 +495,28 @@ public class MFContract implements ContractInterface {
         return helper.createSuccessReturnValue(returnValue);
     }
 
+     /**
+     * Returns the JSON-encoding of a List of MetaObjects representing the history of a specific key.
+     *
+     * @param ctx the hyperledger context object
+     * @param id  the id of the object
+     * @return the JSON string object
+     */
+    @Transaction()
+    public String getAssetHistoryList(Context ctx, String id) {
+        if (!helper.objectExists(ctx, id))
+            return helper.createReturnValue("400", "The object with the key " + id + " does not exist");
 
+        
+        ArrayList<MetaObject> historyForObject = helper.getObjectHistoryFromKey(ctx, id);
+        JsonArray jsonArray = new JsonArray();
+        Iterator<MetaObject> it = historyForObject.iterator();
+        while(it.hasNext()) {
+            jsonArray.add(it.next().toJSON());
+        }
+        //String returnValue = new Gson().toJson(historyForObject, JsonArray.class);
+        return helper.createSuccessReturnValue(jsonArray);
+    }
 
     /**
      * Query the local state database (Couch DB query indexes)
