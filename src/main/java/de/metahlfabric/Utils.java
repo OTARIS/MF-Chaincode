@@ -4,8 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.hyperledger.fabric.contract.Context;
+import org.hyperledger.fabric.shim.ledger.KeyModification;
+import org.hyperledger.fabric.shim.ledger.QueryResultsIterator;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.util.ArrayList;
 
 /**
  * Helper class for the {@link MFContract}.
@@ -152,6 +156,23 @@ public class Utils {
     public MetaObject getMetaObject(Context ctx, String id) {
         return new Gson().fromJson(new String(ctx.getStub().getState(id), UTF_8), MetaObject.class);
     }
+
+     /**
+     * @param ctx the Hyperledger context object
+     * @param id  the corresponding id for the object
+     * @return the MetaObject array of past states
+     */
+    public ArrayList<MetaObject> getObjectHistoryFromKey(Context ctx, String id) {
+        ArrayList<MetaObject> objectHistory = new ArrayList<MetaObject>();
+        QueryResultsIterator<KeyModification> objectChangesIterator = ctx.getStub().getHistoryForKey(id);
+        while(objectChangesIterator.iterator().hasNext()) {
+            KeyModification currentModification = objectChangesIterator.iterator().next();
+            objectHistory.add(new Gson().fromJson(currentModification.getStringValue(), MetaObject.class));
+        }
+        return objectHistory;
+    }
+
+
 
     /**
      * @param ctx     the Hyperledger context object

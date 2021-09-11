@@ -3,13 +3,16 @@ package de.metahlfabric;
 import org.hyperledger.fabric.contract.Context;
 import org.hyperledger.fabric.shim.ChaincodeStub;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 
 public final class MetaChainTest {
 
@@ -85,6 +88,31 @@ public final class MetaChainTest {
             assertTrue(result.contains("200"));
         }
 
+    }
+
+    @Nested
+    class TrackObjectTests {
+        @Test
+        @DisplayName("should return a list of transactions for an existing valid object")
+        public void getAssetTransactionHistoryWithValidId() {
+            String[] attributes = {};
+            String[] attrValues = {};
+            String productCreation = contract.createObject(ctx, "AVALIDID1", collection, "milklot", "4", "Liter", attributes, attrValues);
+            assertTrue(productCreation.contains("200"));
+            String id = "AVALIDID1";
+            String result = contract.getAssetHistoryList(ctx, id);
+            assertTrue(result.contains("200"));
+        }
+
+        @Test
+        @DisplayName("should return an exception for an invalid object")
+        public void getAssetTransactionHistoryWithInvalidId() {
+            String id = "SOMEINVALIDSTUFF1";
+            String result = contract.getAssetHistoryList(ctx,id);
+            System.setOut(System.out);
+            System.out.println(result);
+            assertTrue(result.contains("400"));
+        }
     }
 
 }
